@@ -53,8 +53,8 @@ export function Partners() {
                 transition: "color 0.2s",
                 cursor: "default",
               }}
-              onMouseEnter={(e: MouseEvent<HTMLDivElement>) => (e.currentTarget.style.color = "#0A1628")}
-              onMouseLeave={(e: MouseEvent<HTMLDivElement>) => (e.currentTarget.style.color = "#C0C6D4")}
+              onMouseEnter={(e: MouseEvent<HTMLLIElement>) => (e.currentTarget.style.color = "#0A1628")}
+              onMouseLeave={(e: MouseEvent<HTMLLIElement>) => (e.currentTarget.style.color = "#C0C6D4")}
             >
               {partner.name}
             </li>
