@@ -240,9 +240,4 @@ export function Navbar() {
     </nav>
   );
 }
-        }
-      `}</style>
-    </nav>
-  );
-}
 
