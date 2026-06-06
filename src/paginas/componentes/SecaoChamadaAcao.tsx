@@ -426,13 +426,13 @@ export function SecaoChamadaAcao() {
           </div>
 
           <div
+            className="cta-form-card"
             style={{
               position: "relative",
               background: "rgba(255,255,255,0.06)",
               backdropFilter: "blur(20px)",
               border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: "16px",
-              padding: "32px",
             }}
           >
             <LeadForm />
@@ -441,8 +441,20 @@ export function SecaoChamadaAcao() {
       </div>
 
       <style>{`
+        .cta-form-card {
+          padding: 32px;
+        }
         @media (max-width: 860px) {
           .cta-inner { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 600px) {
+          .cta-inner {
+            padding: 32px 16px !important;
+            gap: 32px !important;
+          }
+          .cta-form-card {
+            padding: 20px !important;
+          }
         }
       `}</style>
     </section>

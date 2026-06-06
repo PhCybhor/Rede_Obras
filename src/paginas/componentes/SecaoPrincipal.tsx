@@ -502,7 +502,7 @@ export function Hero() {
 
       {}
       <style>{`
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
           .hero-grid {
             grid-template-columns: 1fr !important;
             gap: 40px !important;

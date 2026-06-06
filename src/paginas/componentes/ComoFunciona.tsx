@@ -138,10 +138,9 @@ export function HowItWorks() {
             {}
             <div
               aria-label="Estatística: obras concluídas"
+              className="how-it-works-stat-badge"
               style={{
                 position: "absolute",
-                bottom: "-24px",
-                right: "-24px",
                 background: "white",
                 borderRadius: "16px",
                 padding: "20px 24px",
@@ -195,10 +194,9 @@ export function HowItWorks() {
             {}
             <div
               aria-label="Notificação: nova empresa cadastrada"
+              className="how-it-works-notif-badge"
               style={{
                 position: "absolute",
-                top: "24px",
-                left: "-20px",
                 background: "white",
                 borderRadius: "12px",
                 padding: "12px 16px",
@@ -302,10 +300,30 @@ export function HowItWorks() {
       </div>
 
       <style>{`
+        .how-it-works-stat-badge {
+          bottom: -24px;
+          right: -24px;
+        }
+        .how-it-works-notif-badge {
+          top: 24px;
+          left: -20px;
+        }
         @media (max-width: 800px) {
           .how-grid {
             grid-template-columns: 1fr !important;
             gap: 60px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .how-it-works-stat-badge {
+            bottom: 12px !important;
+            right: 12px !important;
+            padding: 12px 16px !important;
+            min-width: 160px !important;
+          }
+          .how-it-works-notif-badge {
+            top: 12px !important;
+            left: 12px !important;
           }
         }
       `}</style>

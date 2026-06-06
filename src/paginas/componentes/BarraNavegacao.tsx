@@ -179,6 +179,7 @@ export function Navbar() {
       {}
       {menuOpen && (
         <div
+          className="nav-mobile-drawer"
           style={{
             background: "rgba(10, 22, 40, 0.98)",
             backdropFilter: "blur(12px)",
@@ -226,16 +227,22 @@ export function Navbar() {
         </div>
       )}
 
-      {}
       <style>{`
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
           .nav-desktop { display: none !important; }
           .nav-mobile-toggle { display: block !important; }
         }
-        @media (min-width: 769px) {
+        @media (min-width: 901px) {
           .nav-mobile-toggle { display: none !important; }
+          .nav-mobile-drawer { display: none !important; }
         }
       `}</style>
     </nav>
   );
 }
+        }
+      `}</style>
+    </nav>
+  );
+}
+

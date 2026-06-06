@@ -131,8 +131,11 @@ export function Stats() {
       </div>
 
       <style>{`
-        @media (max-width: 700px) {
+        @media (max-width: 960px) {
           .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 480px) {
+          .stats-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </section>
