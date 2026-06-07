@@ -1,60 +1,36 @@
-# Node/npm/pnpm dependencies
+# Node
 node_modules/
-**/node_modules/
-pnpm-lock.yaml
-package-lock.json
-
-# Build and outputs
-dist/
-**/dist/
-build/
-out/
-
-# Caches and temporary files
-.vite/
-**/.vite/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
 .eslintcache
-.stylelintcache
-*.tsbuildinfo
-tmp/
-temp/
 
-# Environment variables
+# Python virtualenv and caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+backend/__pycache__/
+backend/venv/
+backend/.venv/
+venv/
+.venv/
+
+# Environment configurations containing credentials
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.env*.local
+backend/.env
 
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# Local Databases
+backend/redeobras.db
+redeobras.db
 
-# System Files
-.DS_Store
-Thumbs.db
-
-# IDE/Editor configurations
+# IDEs & System files
 .vscode/
 .idea/
-.claude/
-
-# Python virtual environments and caches
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-ENV/
-env/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
