@@ -210,3 +210,20 @@ def update_material_request_status(db: Session, req_id: int, status: str):
         db.commit()
         db.refresh(db_req)
     return db_req
+
+def criar_pre_cadastro(db: Session, pre: schemas.PreCadastroCreate):
+    existing_user = db.query(models.PreCadastro).filter(models.PreCadastro.email == pre.email).first()
+    if existing_user:
+        return existing_user
+    db_obj = models.PreCadastro(
+        nome=pre.nome,
+        email=pre.email,
+        telefone=pre.telefone,
+        cargo=pre.cargo,
+        interesse=pre.interesse,
+        role=pre.role
+    )
+    db.add(db_obj)
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj

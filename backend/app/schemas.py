@@ -156,3 +156,19 @@ class ContractResponse(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
+class PreCadastroCreate(BaseModel):
+    nome: str
+    email: EmailStr
+    telefone: Optional[str] = None
+    cargo: Optional[str] = None
+    interesse: Optional[str] = None
+    role: str  # "contratante" ou "prestador"
+
+class PreCadastroResponse(PreCadastroCreate):
+    id: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+        from_attributes = True

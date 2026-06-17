@@ -4,7 +4,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import datetime
-from jose import JWTError, jwt
 
 from .database import engine, get_db, Base
 from . import models, schemas, crud
@@ -306,3 +305,13 @@ def reject_material_request(req_id: int, current_user: models.User = Depends(get
         raise HTTPException(status_code=403, detail="Este contrato não pertence a você")
         
     return crud.update_material_request_status(db, req_id=req_id, status="rejected")
+
+@app.post("/api/pre-cadastro", response_model=schemas.PreCadastroResponse)
+def create_pre_cadastro(pre: schemas.PreCadastroCreate, db: Session = Depends(get_db)):
+    if pre.role not in ("contratante", "prestador"):
+        raise HTTPException(status_code=400, detail="role inválido")
+    cadastro = crud.criar_pre_cadastro(db, pre=pre)
+    return cadastro
+
+
+# Email sending removed: pre-cadastro now only stores data in DB.

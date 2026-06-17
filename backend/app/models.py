@@ -118,3 +118,15 @@ class MaterialRequest(Base):
     # Relationships
     contract = relationship("Contract", back_populates="material_requests")
     requested_by = relationship("User")
+
+class PreCadastro(Base):
+    __tablename__ = "pre_cadastros"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    telefone = Column(String, nullable=True)
+    cargo = Column(String, nullable=True)
+    interesse = Column(Text, nullable=True)
+    role = Column(String, nullable=False)  # "contratante" or "prestador"
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

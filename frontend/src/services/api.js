@@ -124,6 +124,23 @@ class ApiService {
     return user;
   }
 
+  async preSignup(data) {
+    // Map frontend fields to backend schema (nome, email, telefone, cargo, interesse, role)
+    const payload = {
+      nome: data.name,
+      email: data.email,
+      telefone: data.phone || null,
+      cargo: data.role || null,
+      interesse: data.interest || null,
+      role: data.role
+    };
+
+    return this.request('/pre-cadastro', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
   async getMe() {
     return this.request('/auth/me');
   }
@@ -260,6 +277,7 @@ class ApiService {
     };
     return colors[specialty] || '#1e3a8a';
   }
+  
 }
 
 export const api = new ApiService();

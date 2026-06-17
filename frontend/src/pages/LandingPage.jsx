@@ -44,6 +44,13 @@ export default function LandingPage({ onNavigate }) {
           >
             Quero Trabalhar
           </button>
+          <button
+            onClick={() => onNavigate('pre-cadastro')}
+            className="btn btn-outline-primary"
+            style={{ padding: '14px 28px', fontSize: '1.05rem' }}
+          >
+            Pré-cadastro
+          </button>
         </div>
       </header>
 

@@ -11,6 +11,7 @@
   &:hover {
     border-color: var(--accent-border);
   }
+
   &:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -42,8 +43,7 @@
     z-index: 1;
     top: 34px;
     height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg) scale(1.4);
   }
 
   .vite {
@@ -51,8 +51,7 @@
     top: 107px;
     height: 26px;
     width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg) scale(0.8);
   }
 }
 
@@ -75,9 +74,10 @@
   border-top: 1px solid var(--border);
   text-align: left;
 
-  & > div {
+  &>div {
     flex: 1 1 0;
     padding: 32px;
+
     @media (max-width: 1024px) {
       padding: 24px 20px;
     }
@@ -130,6 +130,7 @@
     &:hover {
       box-shadow: var(--shadow);
     }
+
     .button-icon {
       height: 18px;
       width: 18px;
@@ -156,6 +157,7 @@
 #spacer {
   height: 88px;
   border-top: 1px solid var(--border);
+
   @media (max-width: 1024px) {
     height: 48px;
   }
@@ -177,8 +179,286 @@
     left: 0;
     border-left-color: var(--border);
   }
+
   &::after {
     right: 0;
     border-right-color: var(--border);
+  }
+}
+
+
+/* ===== PreCadastro specific styles ===== */
+.pre-cadastro-page {
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  min-height: 100vh;
+  padding: 36px 20px 80px;
+  color: var(--text-primary);
+}
+
+.pre-cadastro-page .hero-section {
+  max-width: 1180px;
+  margin: 0 auto 42px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 32px;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.pre-cadastro-page .hero-copy {
+  max-width: 620px;
+}
+
+.pre-cadastro-page .hero-copy h1 {
+  font-size: clamp(2.4rem, 4vw, 3.6rem);
+  margin: 0.4rem 0 1rem;
+  line-height: 1.02;
+}
+
+.pre-cadastro-page .hero-copy p {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.8;
+  margin-bottom: 1.8rem;
+}
+
+.pre-cadastro-page .hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.pre-cadastro-page .hero-image {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.pre-cadastro-page .hero-banner-card {
+  width: 100%;
+  border-radius: 28px;
+  padding: 32px;
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.16), rgba(59, 130, 246, 0.12));
+  border: 1px solid rgba(59, 130, 246, 0.16);
+  box-shadow: var(--shadow-md);
+}
+
+.pre-cadastro-page .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 14px;
+  border-radius: 9999px;
+  background: rgba(249, 115, 22, 0.12);
+  color: var(--accent);
+  font-size: 0.825rem;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.pre-cadastro-page .hero-banner-card h2 {
+  font-size: clamp(1.5rem, 2vw, 1.95rem);
+  margin-bottom: 0.85rem;
+}
+
+.pre-cadastro-page .hero-banner-card p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.pre-cadastro-page .features-section {
+  max-width: 1100px;
+  margin: 0 auto 48px;
+  padding: 0 16px;
+}
+
+.pre-cadastro-page .features-intro {
+  max-width: 700px;
+  margin-bottom: 30px;
+}
+
+.pre-cadastro-page .features-intro h2 {
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  margin: 0.4rem 0;
+  line-height: 1.05;
+}
+
+.pre-cadastro-page .features-intro p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.pre-cadastro-page .features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.pre-cadastro-page .feature-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.pre-cadastro-page .feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.pre-cadastro-page .feature-card strong {
+  display: block;
+  font-size: 1.08rem;
+  margin-bottom: 12px;
+}
+
+.pre-cadastro-page .feature-card p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 0.97rem;
+}
+
+.pre-cadastro-page .pre-signup-section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.pre-cadastro-page .pre-signup-card {
+  background: white;
+  border-radius: 26px;
+  padding: 34px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: var(--shadow-lg);
+}
+
+.pre-cadastro-page .pre-signup-header h2 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  margin: 0.5rem 0 0.85rem;
+}
+
+.pre-cadastro-page .pre-signup-header p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.pre-cadastro-page .input-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.pre-cadastro-page .input-group {
+  margin-bottom: 18px;
+}
+
+.pre-cadastro-page .input-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.pre-cadastro-page .form-control {
+  width: 100%;
+  min-height: 48px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-primary);
+}
+
+.pre-cadastro-page .form-control:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.pre-cadastro-page .form-control.error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.pre-cadastro-page .error-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.92rem;
+  color: var(--danger);
+}
+
+.pre-cadastro-page textarea.form-control {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.pre-cadastro-page button[type="submit"] {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.pre-cadastro-page .status-message {
+  margin-top: 20px;
+  font-size: 0.96rem;
+}
+
+.pre-cadastro-page .status-success {
+  color: var(--success);
+}
+
+.pre-cadastro-page .status-error {
+  color: var(--danger);
+}
+
+@media (max-width: 980px) {
+
+  .pre-cadastro-page .hero-section,
+  .pre-cadastro-page .features-grid,
+  .pre-cadastro-page .input-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pre-cadastro-page .hero-image {
+    order: -1;
+  }
+}
+
+@media (max-width: 740px) {
+  .pre-cadastro-page {
+    padding: 28px 14px 60px;
+  }
+
+  .pre-cadastro-page .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pre-cadastro-page .hero-banner-card,
+  .pre-cadastro-page .pre-signup-card,
+  .pre-cadastro-page .feature-card {
+    padding: 24px;
+  }
+
+  .pre-cadastro-page .feature-card {
+    min-height: auto;
+  }
+}
+
+.container {
+  width: min(100%, 1180px);
+  margin: 32px auto;
+  padding: 32px;
+  box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 980px) {
+  .container {
+    padding: 24px;
+    margin: 24px auto;
   }
 }
