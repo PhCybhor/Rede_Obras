@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import logo from '../assets/logo.png';
 import { 
   SearchIcon, UserIcon, ChatIcon, BoxIcon, 
   FileIcon, SettingsIcon, StarIcon, SendIcon, LogOutIcon, PlusIcon, CheckIcon, XIcon 
@@ -227,9 +228,8 @@ export default function ContractorDashboard({ user, onLogout }) {
     <div className="dashboard-layout">
       {/* Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div className="sidebar-logo" style={{ color: 'var(--primary)' }}>RO</div>
-          <span className="sidebar-logo-text">REDE<span className="sidebar-orange">OBRAS</span></span>
+        <div className="sidebar-brand" style={{ padding: '20px 24px' }}>
+          <img src={logo} alt="REDEOBRAS" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
         </div>
 
         <ul className="sidebar-menu">

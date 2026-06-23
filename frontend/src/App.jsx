@@ -3,7 +3,6 @@ import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import ContractorDashboard from './pages/ContractorDashboard';
 import ProviderDashboard from './pages/ProviderDashboard';
-import PreCadastro from './pages/PreCadastro';
 import { api } from './services/api';
 
 function App() {
@@ -57,6 +56,11 @@ function App() {
       setCurrentUser(stored);
     }
     
+    if (nextPage === 'pre-cadastro') {
+      setPage('landing');
+      return;
+    }
+    
     setPage(nextPage);
   };
 
@@ -79,7 +83,6 @@ function App() {
     <>
       {page === 'landing' && <LandingPage onNavigate={navigate} />}
       {page === 'login' && <AuthPage onNavigate={navigate} params={params} />}
-      {page === 'pre-cadastro' && <PreCadastro />}
       {page === 'contratante' && currentUser && (
         <ContractorDashboard user={currentUser} onLogout={handleLogout} />
       )}

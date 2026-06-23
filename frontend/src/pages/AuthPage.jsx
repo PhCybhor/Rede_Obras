@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import logo from '../assets/logo.png';
 
 export default function AuthPage({ onNavigate, params = {} }) {
   const [activeTab, setActiveTab] = useState(params.initialTab || 'login'); // 'login' or 'register'
@@ -73,10 +74,7 @@ export default function AuthPage({ onNavigate, params = {} }) {
           onClick={() => onNavigate('landing')}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px', cursor: 'pointer' }}
         >
-          <div className="sidebar-logo">RO</div>
-          <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>
-            REDE<span style={{ color: 'var(--accent)' }}>OBRAS</span>
-          </span>
+          <img src={logo} alt="REDEOBRAS" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
         </div>
 
         {/* Tab switchers */}
