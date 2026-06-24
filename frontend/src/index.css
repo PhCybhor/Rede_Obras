@@ -60,6 +60,15 @@
 
 html {
   scroll-behavior: auto;
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -68,13 +77,30 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
+  width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Global overflow safety */
+h1, h2, h3, h4, p, span, a, li, button, label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 button, input, textarea, select {
   font-family: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+img {
+  max-width: 100%;
 }
 
 a {
@@ -476,6 +502,137 @@ select.form-control {
   padding-right: 36px;
 }
 
+/* Role picker (cadastro) */
+.role-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.role-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 0;
+  user-select: none;
+}
+
+.role-option:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+}
+
+.role-option input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.role-option-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 1.15rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.25s ease;
+}
+
+.role-option-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  width: 100%;
+}
+
+.role-option-body strong {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.role-option-body small {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.role-option-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: transparent;
+  transition: all 0.25s ease;
+}
+
+.role-option.active {
+  border-color: rgba(249, 115, 22, 0.45);
+  background: linear-gradient(145deg, rgba(249, 115, 22, 0.1), rgba(59, 130, 246, 0.06));
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.12);
+}
+
+.role-option.active .role-option-icon {
+  background: rgba(249, 115, 22, 0.14);
+  border-color: rgba(249, 115, 22, 0.25);
+}
+
+.role-option.active .role-option-check {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.4);
+}
+
+.role-option:focus-within {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+@media (max-width: 480px) {
+  .role-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .role-option {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .role-option-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+}
+
 /* Badge */
 .badge {
   display: inline-flex;
@@ -490,6 +647,18 @@ select.form-control {
 }
 
 /* ========================================
+   LANDING PAGE WRAPPER
+   ======================================== */
+.landing-page {
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ========================================
    LANDING - NAVBAR
    ======================================== */
 .landing-navbar {
@@ -497,11 +666,22 @@ select.form-control {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 clamp(20px, 4vw, 48px);
+  gap: 12px;
+  padding: 0 clamp(16px, 4vw, 48px);
   position: sticky;
   top: 0;
   z-index: 100;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   transition: background var(--transition-normal);
+}
+
+.nav-login-desktop {
+  font-size: 0.88rem;
+  padding: 9px 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-brand {
@@ -649,8 +829,11 @@ select.form-control {
 .landing-hero {
   position: relative;
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
   padding: clamp(60px, 8vw, 100px) clamp(20px, 4vw, 48px) clamp(80px, 10vw, 120px);
   background: var(--bg-primary);
+  box-sizing: border-box;
 }
 
 /* Animated mesh gradient background */
@@ -687,6 +870,7 @@ select.form-control {
 }
 
 .hero-centered {
+  width: 100%;
   max-width: 820px;
   margin: 0 auto;
   text-align: center;
@@ -694,7 +878,22 @@ select.form-control {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.hero-centered > * {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.hero-centered .hero-tag {
+  width: auto;
+  max-width: 100%;
+  align-self: center;
 }
 
 .hero-centered .hero-subtitle {
@@ -730,10 +929,15 @@ select.form-control {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 18px 36px;
-  font-size: clamp(1rem, 1.5vw, 1.1rem);
+  padding: 18px 24px;
+  font-size: clamp(0.92rem, 2.8vw, 1.1rem);
   font-weight: 800;
   color: #fff;
+  width: 100%;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.3;
   background: linear-gradient(135deg, var(--accent), #ea580c, var(--primary));
   background-size: 200% auto;
   border: none;
@@ -742,6 +946,7 @@ select.form-control {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 12px 40px rgba(249, 115, 22, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
   animation: gradient-shift 4s ease infinite;
+  box-sizing: border-box;
 }
 
 .btn-explore-platform:hover {
@@ -821,13 +1026,14 @@ select.form-control {
 }
 
 .hero-title {
-  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  font-size: clamp(1.75rem, 5.5vw, 3.5rem);
   font-weight: 900;
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: -1.5px;
   margin: 0 0 20px;
   color: var(--text-primary);
   animation: fadeIn 0.7s ease 0.1s both;
+  text-wrap: balance;
 }
 
 .hero-title .highlight-primary {
@@ -845,9 +1051,9 @@ select.form-control {
 }
 
 .hero-subtitle {
-  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
   color: var(--text-secondary);
-  margin: 0 0 28px;
+  margin: 0 auto 28px;
   line-height: 1.7;
   max-width: 520px;
   animation: fadeIn 0.7s ease 0.2s both;
@@ -987,8 +1193,10 @@ select.form-control {
 .platform-showcase {
   padding: clamp(60px, 8vw, 100px) clamp(20px, 4vw, 48px);
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   border-radius: var(--radius-xl);
+  box-sizing: border-box;
   transition: box-shadow 0.6s ease, background 0.6s ease;
 }
 
@@ -1056,6 +1264,9 @@ select.form-control {
   padding: clamp(60px, 8vw, 100px) clamp(20px, 4vw, 48px);
   background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 50%, var(--bg-secondary) 100%);
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .signup-section::before {
@@ -1073,10 +1284,20 @@ select.form-control {
   grid-template-columns: 1fr 1.1fr;
   gap: clamp(32px, 5vw, 60px);
   max-width: 1100px;
+  width: 100%;
   margin: 0 auto;
   align-items: center;
   position: relative;
   z-index: 1;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.signup-copy,
+.signup-form-card,
+.hero-form-card {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .signup-copy {
@@ -2293,7 +2514,119 @@ select.form-control {
   .nav-links { display: none; }
   .hamburger { display: flex; }
 
-  .hero-title { letter-spacing: -1px; }
+  .nav-login-desktop { display: none; }
+
+  .nav-right {
+    gap: 0;
+    flex-shrink: 0;
+  }
+
+  /* Prevent iOS auto-zoom on input focus */
+  .form-control,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  .landing-navbar {
+    height: 60px;
+    padding: 0 12px;
+  }
+
+  .nav-brand img { height: 32px; max-width: 120px; }
+
+  .landing-hero {
+    padding: 36px 16px 48px;
+  }
+
+  .hero-centered {
+    align-items: stretch;
+  }
+
+  .hero-title {
+    letter-spacing: -0.5px;
+    font-size: clamp(1.55rem, 7vw, 2rem);
+  }
+
+  .hero-subtitle {
+    max-width: 100%;
+    font-size: 0.95rem;
+    margin-bottom: 22px;
+  }
+
+  .hero-features {
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .feature-badge {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .hero-cta-group {
+    width: 100%;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .hero-cta-group .btn-explore-platform,
+  .hero-cta-group .hero-secondary-btn {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero-secondary-btn {
+    width: 100% !important;
+    padding: 12px 16px !important;
+  }
+
+  .locked-section {
+    max-width: 100%;
+  }
+
+  .locked-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .locked-buttons .btn-blocked {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .scroll-hint {
+    margin-top: 14px;
+    font-size: 0.72rem;
+  }
+
+  .scroll-hint svg { width: 18px; height: 18px; }
+
+  .platform-showcase {
+    padding: 40px 16px 48px;
+  }
+
+  .signup-section {
+    padding: 40px 16px 56px;
+  }
+
+  .signup-section-inner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .signup-copy {
+    text-align: center;
+  }
+
+  .signup-copy .section-title {
+    text-align: center !important;
+  }
 
   .offerings-grid,
   .features-grid {
@@ -2303,14 +2636,15 @@ select.form-control {
 
   .btn-explore-platform {
     width: 100%;
-    max-width: 360px;
-    padding: 16px 24px;
-    font-size: 0.95rem;
+    max-width: 100%;
+    padding: 15px 18px;
+    font-size: 0.92rem;
   }
 
   .platform-connector {
     flex-direction: column;
     gap: 12px;
+    margin-top: 32px;
   }
 
   .connector-line {
@@ -2318,17 +2652,22 @@ select.form-control {
     flex: none;
   }
 
+  .connector-label {
+    white-space: normal;
+    text-align: center;
+  }
+
   .feature-card {
-    padding: 28px 24px;
+    padding: 24px 18px;
   }
 
   .stats-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 12px;
   }
 
   .stat-card {
-    padding: 24px 16px;
+    padding: 20px 16px;
   }
 
   .footer-grid {
@@ -2336,17 +2675,25 @@ select.form-control {
     gap: 28px;
   }
 
-  .content-body { padding: 20px; }
+  .content-body { padding: 20px 16px; }
 
   .toast {
-    min-width: 260px;
-    max-width: calc(100vw - 48px);
-    right: 12px;
+    min-width: 0;
+    width: calc(100vw - 32px);
+    max-width: calc(100vw - 32px);
+    right: 16px;
   }
 
   .toast-container {
-    right: 12px;
-    left: 12px;
+    right: 16px;
+    left: 16px;
+  }
+
+  .faq-section,
+  .cta-section,
+  .landing-footer {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 
@@ -2355,25 +2702,76 @@ select.form-control {
    ======================================== */
 @media (max-width: 480px) {
   .landing-hero {
-    padding: 48px 16px 64px;
+    padding: 32px 14px 44px;
+  }
+
+  .hero-tag {
+    font-size: 0.68rem;
+    padding: 6px 12px;
+    letter-spacing: 0.3px;
   }
 
   .hero-title {
-    font-size: 1.8rem;
-    letter-spacing: -0.5px;
+    font-size: 1.55rem;
+    letter-spacing: -0.35px;
+    line-height: 1.2;
   }
 
   .hero-subtitle {
-    font-size: 0.92rem;
+    font-size: 0.88rem;
+    line-height: 1.65;
   }
 
   .hero-features {
     gap: 8px;
+    flex-direction: column;
   }
 
   .feature-badge {
+    width: 100%;
+    flex: none;
     font-size: 0.82rem;
-    padding: 8px 12px;
+    padding: 10px 12px;
+  }
+
+  .btn-explore-platform {
+    padding: 15px 20px;
+    font-size: 0.92rem;
+    gap: 8px;
+  }
+
+  .hero-secondary-btn {
+    font-size: 0.85rem !important;
+  }
+
+  .platform-showcase {
+    padding: 40px 14px 48px;
+  }
+
+  .platform-stats {
+    margin-bottom: 36px;
+  }
+
+  .stat-number {
+    font-size: 2.1rem;
+  }
+
+  .signup-section {
+    padding: 40px 14px 56px;
+  }
+
+  .signup-lead {
+    font-size: 0.95rem;
+  }
+
+  .signup-perks li {
+    font-size: 0.88rem;
+    padding: 9px 14px;
+  }
+
+  .connector-label {
+    font-size: 0.72rem;
+    padding: 7px 14px;
   }
 
   .hero-form-card {
@@ -2429,21 +2827,168 @@ select.form-control {
    ======================================== */
 @media (max-width: 375px) {
   .hero-title {
-    font-size: 1.6rem;
+    font-size: 1.42rem;
   }
 
-  .feature-badge {
+  .btn-explore-platform {
+    font-size: 0.85rem;
+    padding: 14px 14px;
+  }
+
+  .nav-brand img {
+    height: 28px;
+    max-width: 100px;
+  }
+}
+
+/* ========================================
+   RESPONSIVE - DASHBOARD / APP (900px)
+   ======================================== */
+@media (max-width: 900px) {
+  .dashboard-layout {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: sticky;
+    top: 0;
+    flex-direction: column;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .sidebar-brand {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .sidebar-menu {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 10px 12px;
+    gap: 8px;
+    flex-grow: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .sidebar-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar-item-btn {
+    width: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+
+  .sidebar-item-btn:hover {
+    padding-left: 14px;
+  }
+
+  .sidebar-user {
+    padding: 12px 16px;
+  }
+
+  .main-content {
+    height: auto;
+    overflow-y: visible;
+  }
+
+  .top-bar {
+    height: auto;
+    min-height: 60px;
+    padding: 12px 16px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .page-title {
+    font-size: 1.2rem;
+  }
+
+  .content-body {
+    padding: 24px 16px;
+  }
+
+  /* Chat module stacks vertically */
+  .chat-window {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 200px);
+  }
+
+  .chat-sidebar {
+    width: 100%;
+    max-height: 220px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .chat-main {
+    min-height: 60vh;
+  }
+
+  .msg-wrapper {
+    max-width: 85%;
+  }
+
+  /* Tables become horizontally scrollable */
+  .materials-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .provider-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .proposal-list-item {
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+
+/* ========================================
+   RESPONSIVE - AUTH (520px)
+   ======================================== */
+@media (max-width: 520px) {
+  .auth-container {
+    padding: 24px 16px;
+  }
+
+  .auth-card {
+    padding: 28px 20px;
+    border-radius: var(--radius-md);
+  }
+
+  .auth-tab {
+    padding: 12px 8px;
+    font-size: 0.92rem;
+  }
+
+  .ai-search-box {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .ai-search-input {
+    font-size: 1rem;
+    padding: 8px 4px;
+  }
+
+  .ai-search-box .btn {
     width: 100%;
     justify-content: center;
-  }
-
-  .locked-buttons {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .locked-buttons .btn-blocked {
-    width: 100%;
   }
 }
 

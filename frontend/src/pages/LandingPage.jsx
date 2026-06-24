@@ -154,9 +154,14 @@ export default function LandingPage({ onNavigate }) {
 
     setSignupVisible(false);
 
+    const isMobile = window.innerWidth <= 768;
     const targetY = getCadastroScrollY();
     const distance = Math.abs(targetY - window.scrollY);
-    const duration = Math.min(maxDuration, Math.max(4500, distance * 2.8));
+
+    const cappedMax = isMobile ? Math.min(maxDuration, 4200) : maxDuration;
+    const minDuration = isMobile ? 2600 : 4500;
+    const perPixel = isMobile ? 1.4 : 2.8;
+    const duration = Math.min(cappedMax, Math.max(minDuration, distance * perPixel));
 
     const platformEl = document.getElementById('plataforma');
 
@@ -376,10 +381,40 @@ export default function LandingPage({ onNavigate }) {
 
           <div className="input-group">
             <span className="input-label">Perfil de Cadastro</span>
-            <select name="role" className="form-control" value={form.role} onChange={handleChange}>
-              <option value="contratante">Contratante (Quero realizar obras)</option>
-              <option value="prestador">Prestador de Serviço (Quero trabalhar)</option>
-            </select>
+            <div className="role-picker" role="radiogroup" aria-label="Perfil de Cadastro">
+              <label className={`role-option ${form.role === 'contratante' ? 'active' : ''}`}>
+                <input
+                  type="radio"
+                  name="role"
+                  value="contratante"
+                  checked={form.role === 'contratante'}
+                  onChange={handleChange}
+                />
+                <span className="role-option-icon" aria-hidden="true">🏗️</span>
+                <span className="role-option-body">
+                  <strong>Contratante</strong>
+                  <small>Quero realizar obras</small>
+                </span>
+                <span className="role-option-check" aria-hidden="true">✓</span>
+              </label>
+
+              <label className={`role-option ${form.role === 'prestador' ? 'active' : ''}`}>
+                <input
+                  type="radio"
+                  name="role"
+                  value="prestador"
+                  checked={form.role === 'prestador'}
+                  onChange={handleChange}
+                />
+                <span className="role-option-icon" aria-hidden="true">🔧</span>
+                <span className="role-option-body">
+                  <strong>Prestador</strong>
+                  <small>Quero trabalhar</small>
+                </span>
+                <span className="role-option-check" aria-hidden="true">✓</span>
+              </label>
+            </div>
+            {errors.role && <span className="error-text">{errors.role}</span>}
           </div>
 
           <div className="input-group">
@@ -426,7 +461,7 @@ export default function LandingPage({ onNavigate }) {
   );
 
   return (
-    <div className="animate-fade-in" style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100vh', position: 'relative' }}>
+    <div className="landing-page animate-fade-in">
       {isJourneyScrolling && (
         <div className="journey-progress-bar" aria-hidden="true">
           <div className="journey-progress-fill" style={{ width: `${journeyProgress * 100}%` }} />
@@ -465,8 +500,7 @@ export default function LandingPage({ onNavigate }) {
         <div className="nav-right">
           <button
             onClick={() => onNavigate('login', { initialTab: 'login' })}
-            className="btn btn-outline-primary"
-            style={{ fontSize: '0.88rem', padding: '9px 20px' }}
+            className="btn btn-outline-primary nav-login-desktop"
           >
             Entrar no Sistema
           </button>
