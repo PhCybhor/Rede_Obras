@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SearchIcon, BoxIcon, FileIcon } from '../components/Icons';
+import { SearchIcon, BoxIcon, FileIcon, ChatIcon, UserIcon, ToolsIcon } from '../components/Icons';
 import { api } from '../services/api';
 import logo from '../assets/logo.png';
 
@@ -32,7 +32,13 @@ export default function LandingPage({ onNavigate }) {
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signupVisible, setSignupVisible] = useState(false);
+  const [platformHighlight, setPlatformHighlight] = useState(false);
+  const [journeyProgress, setJourneyProgress] = useState(0);
+  const [isJourneyScrolling, setIsJourneyScrolling] = useState(false);
   const formRef = useRef(null);
+  const signupSectionRef = useRef(null);
+  const scrollAnimRef = useRef(null);
 
   // Scroll reveal
   const revealRefs = useRef([]);
@@ -56,6 +62,21 @@ export default function LandingPage({ onNavigate }) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const el = signupSectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setSignupVisible(true);
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const addRevealRef = (el) => {
     if (el && !revealRefs.current.includes(el)) {
       revealRefs.current.push(el);
@@ -75,19 +96,112 @@ export default function LandingPage({ onNavigate }) {
     }
   }, [showToast]);
 
+  useEffect(() => {
+    return () => {
+      if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
+      document.body.classList.remove('journey-scrolling');
+    };
+  }, []);
+
+  const easeInOutQuart = (t) => (
+    t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2
+  );
+
+  const slowScrollTo = (targetY, duration, { onProgress, onComplete } = {}) => {
+    if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
+
+    const startY = window.scrollY;
+    const distance = targetY - startY;
+    const startTime = performance.now();
+
+    setIsJourneyScrolling(true);
+    setJourneyProgress(0);
+    document.body.classList.add('journey-scrolling');
+
+    const step = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = easeInOutQuart(progress);
+
+      window.scrollTo(0, startY + distance * eased);
+      setJourneyProgress(progress);
+      onProgress?.(progress);
+
+      if (progress < 1) {
+        scrollAnimRef.current = requestAnimationFrame(step);
+      } else {
+        scrollAnimRef.current = null;
+        setIsJourneyScrolling(false);
+        setJourneyProgress(0);
+        document.body.classList.remove('journey-scrolling');
+        onComplete?.();
+      }
+    };
+
+    scrollAnimRef.current = requestAnimationFrame(step);
+  };
+
+  const getCadastroScrollY = () => {
+    const el = signupSectionRef.current || document.getElementById('pre-registro');
+    if (!el) return window.scrollY;
+    const rect = el.getBoundingClientRect();
+    return window.scrollY + rect.top - 72;
+  };
+
+  const startJourneyToCadastro = (maxDuration = 7500) => {
+    setMenuOpen(false);
+    if (isJourneyScrolling) return;
+
+    setSignupVisible(false);
+
+    const targetY = getCadastroScrollY();
+    const distance = Math.abs(targetY - window.scrollY);
+    const duration = Math.min(maxDuration, Math.max(4500, distance * 2.8));
+
+    const platformEl = document.getElementById('plataforma');
+
+    slowScrollTo(targetY, duration, {
+      onProgress: (progress) => {
+        if (progress > 0.12 && platformEl) {
+          platformEl.classList.add('visible');
+        }
+        if (progress > 0.2 && progress < 0.75) {
+          setPlatformHighlight(true);
+        } else if (progress >= 0.75) {
+          setPlatformHighlight(false);
+        }
+        if (progress > 0.88) {
+          setSignupVisible(true);
+        }
+      },
+      onComplete: () => {
+        if (platformEl) platformEl.classList.add('visible');
+        setSignupVisible(true);
+        setPlatformHighlight(false);
+      }
+    });
+  };
+
   // Close mobile menu on anchor click
   const handleNavClick = (e, targetId) => {
     e.preventDefault();
     setMenuOpen(false);
+
+    if (targetId === 'pre-registro') {
+      startJourneyToCadastro(7000);
+      return;
+    }
+
     const el = document.getElementById(targetId);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Scroll to form
+  const scrollToPlatform = () => {
+    startJourneyToCadastro(7500);
+  };
+
   const scrollToForm = () => {
-    if (formRef.current) {
-      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    startJourneyToCadastro(6000);
   };
 
   // Form logic
@@ -163,8 +277,162 @@ export default function LandingPage({ onNavigate }) {
     }
   ];
 
+  const offerings = [
+    {
+      icon: SearchIcon,
+      title: 'IA de Match Perfeito',
+      desc: 'Descreva em linguagem natural o que precisa e nossa IA mapeia os profissionais ideais na sua região em segundos.',
+      accent: 'rgba(59, 130, 246, 0.4)',
+      iconStyle: { background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: 'var(--primary-light)' }
+    },
+    {
+      icon: BoxIcon,
+      title: 'Gestão de Materiais',
+      desc: 'O prestador solicita insumos pelo painel. O contratante revisa quantidade, valores e aprova ou recusa com um clique.',
+      accent: 'rgba(249, 115, 22, 0.4)',
+      iconStyle: { background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.2)', color: 'var(--accent)' }
+    },
+    {
+      icon: FileIcon,
+      title: 'Contratos Digitais',
+      desc: 'Formalize propostas com segurança jurídica. Publique demandas, receba orçamentos e aceite o melhor para o seu bolso.',
+      accent: 'rgba(16, 185, 129, 0.4)',
+      iconStyle: { background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: 'var(--success)' }
+    },
+    {
+      icon: ChatIcon,
+      title: 'Chat Integrado',
+      desc: 'Negocie diretamente com profissionais dentro da plataforma, com histórico completo de conversas por obra.',
+      accent: 'rgba(139, 92, 246, 0.4)',
+      iconStyle: { background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)', color: '#a78bfa' }
+    },
+    {
+      icon: ToolsIcon,
+      title: 'Propostas Públicas',
+      desc: 'Publique sua demanda e receba múltiplos orçamentos de prestadores qualificados para comparar e escolher.',
+      accent: 'rgba(236, 72, 153, 0.4)',
+      iconStyle: { background: 'rgba(236, 72, 153, 0.1)', border: '1px solid rgba(236, 72, 153, 0.2)', color: '#f472b6' }
+    },
+    {
+      icon: UserIcon,
+      title: 'Painéis Dedicados',
+      desc: 'Áreas exclusivas para contratantes e prestadores, com dashboards completos para gerenciar obras e serviços.',
+      accent: 'rgba(14, 165, 233, 0.4)',
+      iconStyle: { background: 'rgba(14, 165, 233, 0.1)', border: '1px solid rgba(14, 165, 233, 0.2)', color: '#38bdf8' }
+    }
+  ];
+
+  const renderSignupForm = () => (
+    <div className="hero-form-card signup-form-card">
+      <div className="form-header">
+        <span className="badge">✨ Lista de Espera Ativa</span>
+        <h2>Acesso Prioritário</h2>
+        <p>Cadastre-se para receber o convite exclusivo no lançamento oficial.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="form-fields">
+          <div className="input-group">
+            <span className="input-label">Nome Completo</span>
+            <input
+              className={`form-control ${errors.name ? 'error' : ''}`}
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="Ex: Carlos Silva"
+              required
+            />
+            {errors.name && <span className="error-text">{errors.name}</span>}
+          </div>
+
+          <div className="input-group">
+            <span className="input-label">Endereço de E-mail</span>
+            <input
+              className={`form-control ${errors.email ? 'error' : ''}`}
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="Ex: carlos@email.com"
+              required
+            />
+            {errors.email && <span className="error-text">{errors.email}</span>}
+          </div>
+
+          <div className="input-group">
+            <span className="input-label">Celular / WhatsApp</span>
+            <input
+              className={`form-control ${errors.phone ? 'error' : ''}`}
+              type="text"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="(xx) xxxxx-xxxx"
+              maxLength="15"
+            />
+            {errors.phone && <span className="error-text">{errors.phone}</span>}
+          </div>
+
+          <div className="input-group">
+            <span className="input-label">Perfil de Cadastro</span>
+            <select name="role" className="form-control" value={form.role} onChange={handleChange}>
+              <option value="contratante">Contratante (Quero realizar obras)</option>
+              <option value="prestador">Prestador de Serviço (Quero trabalhar)</option>
+            </select>
+          </div>
+
+          <div className="input-group">
+            <span className="input-label">
+              O que você mais deseja? <span style={{ color: 'var(--text-light)', fontWeight: 'normal' }}>(Opcional)</span>
+            </span>
+            <textarea
+              className="form-control"
+              name="interest"
+              value={form.interest}
+              onChange={handleChange}
+              rows="3"
+              placeholder="Ex: Encontrar pedreiros qualificados na minha região..."
+              style={{ minHeight: '72px', resize: 'vertical' }}
+            />
+          </div>
+
+          <button type="submit" className="btn-cta-shimmer" disabled={isSubmitting}>
+            {isSubmitting ? 'Enviando...' : '🚀 Garantir Acesso Prioritário'}
+          </button>
+        </div>
+
+        {status && (
+          <p
+            role="status"
+            aria-live="polite"
+            style={{
+              marginTop: '16px',
+              textAlign: 'center',
+              fontWeight: 600,
+              padding: '12px',
+              borderRadius: 'var(--radius-sm)',
+              background: status.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+              border: status.type === 'success' ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)',
+              fontSize: '0.88rem',
+              color: status.type === 'success' ? 'var(--success)' : 'var(--danger)'
+            }}
+          >
+            {status.message}
+          </p>
+        )}
+      </form>
+    </div>
+  );
+
   return (
     <div className="animate-fade-in" style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100vh', position: 'relative' }}>
+      {isJourneyScrolling && (
+        <div className="journey-progress-bar" aria-hidden="true">
+          <div className="journey-progress-fill" style={{ width: `${journeyProgress * 100}%` }} />
+        </div>
+      )}
+
       {/* Toast */}
       {showToast && (
         <div className="toast-container">
@@ -185,7 +453,11 @@ export default function LandingPage({ onNavigate }) {
         </div>
 
         <ul className="nav-links">
-          <li><a onClick={(e) => handleNavClick(e, 'features')}>Funcionalidades</a></li>
+          <li>
+            <button className="btn btn-explore-top" onClick={scrollToPlatform}>
+              O que oferecemos
+            </button>
+          </li>
           <li><a onClick={(e) => handleNavClick(e, 'faq')}>Perguntas</a></li>
           <li><a onClick={(e) => handleNavClick(e, 'pre-registro')}>Pré-Registro</a></li>
         </ul>
@@ -208,7 +480,9 @@ export default function LandingPage({ onNavigate }) {
 
       {/* Mobile Menu */}
       <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
-        <a onClick={(e) => handleNavClick(e, 'features')}>Funcionalidades</a>
+        <button className="btn btn-explore-top" onClick={scrollToPlatform}>
+          O que oferecemos
+        </button>
         <a onClick={(e) => handleNavClick(e, 'faq')}>Perguntas Frequentes</a>
         <a onClick={(e) => handleNavClick(e, 'pre-registro')}>Pré-Registro</a>
         <button
@@ -222,226 +496,154 @@ export default function LandingPage({ onNavigate }) {
 
       {/* ===== HERO ===== */}
       <header className="landing-hero">
-        <div className="hero-grid">
-          {/* Left Column */}
-          <div className="hero-copy">
-            <span className="hero-tag">🚀 Plataforma em Pré-Lançamento</span>
+        <div className="hero-centered">
+          <span className="hero-tag">🚀 Plataforma em Pré-Lançamento</span>
 
-            <h1 className="hero-title">
-              Conectando quem{' '}
-              <span className="highlight-primary">constrói</span>{' '}
-              com quem precisa de{' '}
-              <span className="highlight-accent">obras</span>.
-            </h1>
+          <h1 className="hero-title">
+            Conectando quem{' '}
+            <span className="highlight-primary">constrói</span>{' '}
+            com quem precisa de{' '}
+            <span className="highlight-accent">obras</span>.
+          </h1>
 
-            <p className="hero-subtitle">
-              Encontre profissionais com IA, gerencie materiais e formalize contratos digitais seguros — tudo em um único lugar.
-            </p>
+          <p className="hero-subtitle">
+            Encontre profissionais com IA, gerencie materiais e formalize contratos digitais seguros — tudo em um único lugar.
+          </p>
 
-            {/* Feature badges */}
-            <div className="hero-features">
-              <div className="feature-badge">
-                <div className="badge-icon" style={{ background: 'rgba(59, 130, 246, 0.12)', color: 'var(--primary-light)' }}>🧠</div>
-                <span>Match com IA</span>
-              </div>
-              <div className="feature-badge">
-                <div className="badge-icon" style={{ background: 'rgba(249, 115, 22, 0.12)', color: 'var(--accent)' }}>📦</div>
-                <span>Gestão de Materiais</span>
-              </div>
-              <div className="feature-badge">
-                <div className="badge-icon" style={{ background: 'rgba(16, 185, 129, 0.12)', color: 'var(--success)' }}>✍️</div>
-                <span>Contratos Seguros</span>
-              </div>
+          <div className="hero-features">
+            <div className="feature-badge">
+              <div className="badge-icon" style={{ background: 'rgba(59, 130, 246, 0.12)', color: 'var(--primary-light)' }}>🧠</div>
+              <span>Match com IA</span>
             </div>
-
-            {/* Locked Buttons */}
-            <div className="locked-section">
-              <span className="locked-label">Acesso ao sistema (em homologação)</span>
-              <div className="locked-buttons">
-                <button onClick={() => handleBlockedClick('Sou Contratante')} className="btn btn-blocked">
-                  <span>🔒</span> Sou Contratante
-                </button>
-                <button onClick={() => handleBlockedClick('Quero Trabalhar')} className="btn btn-blocked">
-                  <span>🔒</span> Quero Trabalhar
-                </button>
-              </div>
+            <div className="feature-badge">
+              <div className="badge-icon" style={{ background: 'rgba(249, 115, 22, 0.12)', color: 'var(--accent)' }}>📦</div>
+              <span>Gestão de Materiais</span>
+            </div>
+            <div className="feature-badge">
+              <div className="badge-icon" style={{ background: 'rgba(16, 185, 129, 0.12)', color: 'var(--success)' }}>✍️</div>
+              <span>Contratos Seguros</span>
             </div>
           </div>
 
-          {/* Right Column — Form */}
-          <div className="hero-form-wrapper" ref={formRef} id="pre-registro">
-            <div className="hero-form-card">
-              <div className="form-header">
-                <span className="badge">✨ Lista de Espera Ativa</span>
-                <h2>Acesso Prioritário</h2>
-                <p>Cadastre-se para receber o convite exclusivo no lançamento oficial.</p>
-              </div>
+          <div className="hero-cta-group">
+            <button
+              className="btn-explore-platform"
+              onClick={scrollToPlatform}
+              disabled={isJourneyScrolling}
+            >
+              <span className="btn-explore-icon">✨</span>
+              {isJourneyScrolling ? 'Descendo...' : 'Descubra tudo que oferecemos'}
+              <span className="btn-explore-arrow">↓</span>
+            </button>
+            <button
+              className="btn btn-outline-primary hero-secondary-btn"
+              onClick={scrollToForm}
+              disabled={isJourneyScrolling}
+            >
+              Ir direto ao cadastro
+            </button>
+          </div>
 
-              <form onSubmit={handleSubmit} noValidate>
-                <div className="form-fields">
-                  {/* Name */}
-                  <div className="input-group">
-                    <span className="input-label">Nome Completo</span>
-                    <input
-                      className={`form-control ${errors.name ? 'error' : ''}`}
-                      type="text"
-                      name="name"
-                      value={form.name}
-                      onChange={handleChange}
-                      placeholder="Ex: Carlos Silva"
-                      required
-                    />
-                    {errors.name && <span className="error-text">{errors.name}</span>}
-                  </div>
-
-                  {/* Email */}
-                  <div className="input-group">
-                    <span className="input-label">Endereço de E-mail</span>
-                    <input
-                      className={`form-control ${errors.email ? 'error' : ''}`}
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      placeholder="Ex: carlos@email.com"
-                      required
-                    />
-                    {errors.email && <span className="error-text">{errors.email}</span>}
-                  </div>
-
-                  {/* Phone */}
-                  <div className="input-group">
-                    <span className="input-label">Celular / WhatsApp</span>
-                    <input
-                      className={`form-control ${errors.phone ? 'error' : ''}`}
-                      type="text"
-                      name="phone"
-                      value={form.phone}
-                      onChange={handleChange}
-                      placeholder="(xx) xxxxx-xxxx"
-                      maxLength="15"
-                    />
-                    {errors.phone && <span className="error-text">{errors.phone}</span>}
-                  </div>
-
-                  {/* Role */}
-                  <div className="input-group">
-                    <span className="input-label">Perfil de Cadastro</span>
-                    <select
-                      name="role"
-                      className="form-control"
-                      value={form.role}
-                      onChange={handleChange}
-                    >
-                      <option value="contratante">Contratante (Quero realizar obras)</option>
-                      <option value="prestador">Prestador de Serviço (Quero trabalhar)</option>
-                    </select>
-                  </div>
-
-                  {/* Interest */}
-                  <div className="input-group">
-                    <span className="input-label">
-                      O que você mais deseja? <span style={{ color: 'var(--text-light)', fontWeight: 'normal' }}>(Opcional)</span>
-                    </span>
-                    <textarea
-                      className="form-control"
-                      name="interest"
-                      value={form.interest}
-                      onChange={handleChange}
-                      rows="3"
-                      placeholder="Ex: Encontrar pedreiros qualificados na minha região..."
-                      style={{ minHeight: '72px', resize: 'vertical' }}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="btn-cta-shimmer"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? 'Enviando...' : '🚀 Garantir Acesso Prioritário'}
-                  </button>
-                </div>
-
-                {status && (
-                  <p
-                    role="status"
-                    aria-live="polite"
-                    style={{
-                      marginTop: '16px',
-                      textAlign: 'center',
-                      fontWeight: 600,
-                      padding: '12px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: status.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                      border: status.type === 'success' ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)',
-                      fontSize: '0.88rem',
-                      color: status.type === 'success' ? 'var(--success)' : 'var(--danger)'
-                    }}
-                  >
-                    {status.message}
-                  </p>
-                )}
-              </form>
+          <div className="locked-section">
+            <span className="locked-label">Acesso ao sistema (em homologação)</span>
+            <div className="locked-buttons">
+              <button onClick={() => handleBlockedClick('Sou Contratante')} className="btn btn-blocked">
+                <span>🔒</span> Sou Contratante
+              </button>
+              <button onClick={() => handleBlockedClick('Quero Trabalhar')} className="btn btn-blocked">
+                <span>🔒</span> Quero Trabalhar
+              </button>
             </div>
           </div>
+
+          <button className="scroll-hint" onClick={scrollToPlatform} aria-label="Rolar para ver funcionalidades">
+            <span>Explore a plataforma</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12l7 7 7-7" />
+            </svg>
+          </button>
         </div>
       </header>
 
-      {/* ===== STATS ===== */}
-      <section className="stats-section reveal-section" ref={addRevealRef}>
-        <div className="stats-grid">
+      {/* ===== PLATFORM SHOWCASE ===== */}
+      <section
+        id="plataforma"
+        className={`platform-showcase reveal-section ${platformHighlight ? 'platform-highlight' : ''}`}
+        ref={addRevealRef}
+      >
+        <div className="stats-grid platform-stats">
           <div className="stat-card">
             <div className="stat-number primary">500+</div>
             <div className="stat-label">Pré-cadastros realizados</div>
           </div>
           <div className="stat-card">
-            <div className="stat-number accent">3</div>
-            <div className="stat-label">Recursos com IA integrada</div>
+            <div className="stat-number accent">6</div>
+            <div className="stat-label">Recursos integrados</div>
           </div>
           <div className="stat-card">
             <div className="stat-number success">100%</div>
             <div className="stat-label">Contratos com segurança jurídica</div>
           </div>
         </div>
-      </section>
 
-      {/* ===== FEATURES ===== */}
-      <section className="features-section reveal-section" ref={addRevealRef} id="features">
-        <div className="section-header">
-          <span className="section-tag">Funcionalidades</span>
+        <div className="section-header" id="features">
+          <span className="section-tag">Tudo em um só lugar</span>
           <h2 className="section-title">
-            O que faz a <span style={{ color: 'var(--primary-light)' }}>REDE</span><span style={{ color: 'var(--accent)' }}>OBRAS</span> única?
+            O que a <span style={{ color: 'var(--primary-light)' }}>REDE</span><span style={{ color: 'var(--accent)' }}>OBRAS</span> proporciona
           </h2>
           <p className="section-subtitle">
-            Tecnologia de ponta aplicada à construção civil. Três pilares que transformam a maneira de encontrar, contratar e gerenciar serviços.
+            Tecnologia de ponta aplicada à construção civil. Uma plataforma completa para conectar, contratar e gerenciar obras com segurança.
           </p>
         </div>
 
-        <div className="features-grid">
-          <div className="feature-card" style={{ '--card-accent': 'rgba(59, 130, 246, 0.4)' }}>
-            <div className="feature-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: 'var(--primary-light)' }}>
-              <SearchIcon size={30} />
-            </div>
-            <h3>IA de Match Perfeito</h3>
-            <p>Descreva em linguagem natural o que precisa e nossa IA mapeia os profissionais ideais disponíveis na sua região em segundos.</p>
-          </div>
+        <div className="offerings-grid">
+          {offerings.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.title}
+                className="offering-card feature-card"
+                style={{ '--card-accent': item.accent, '--stagger': i }}
+              >
+                <div className="feature-icon" style={item.iconStyle}>
+                  <Icon size={30} />
+                </div>
+                <h3>{item.title}</h3>
+                <p>{item.desc}</p>
+              </div>
+            );
+          })}
+        </div>
 
-          <div className="feature-card" style={{ '--card-accent': 'rgba(249, 115, 22, 0.4)' }}>
-            <div className="feature-icon" style={{ background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.2)', color: 'var(--accent)' }}>
-              <BoxIcon size={30} />
-            </div>
-            <h3>Gestão de Materiais</h3>
-            <p>O prestador solicita insumos pelo painel. O contratante revisa quantidade, valores e aprova ou recusa com um clique.</p>
-          </div>
+        <div className="platform-connector">
+          <div className="connector-line" />
+          <span className="connector-label">Pronto para garantir seu lugar?</span>
+          <div className="connector-line" />
+        </div>
+      </section>
 
-          <div className="feature-card" style={{ '--card-accent': 'rgba(16, 185, 129, 0.4)' }}>
-            <div className="feature-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: 'var(--success)' }}>
-              <FileIcon size={30} />
-            </div>
-            <h3>Contratos Digitais</h3>
-            <p>Formalize propostas com segurança jurídica. Publique demandas, receba orçamentos e aceite o que melhor cabe no seu bolso.</p>
+      {/* ===== SIGNUP (animated on scroll) ===== */}
+      <section
+        id="pre-registro"
+        ref={signupSectionRef}
+        className={`signup-section ${signupVisible ? 'signup-visible' : ''}`}
+      >
+        <div className="signup-section-inner" ref={formRef}>
+          <div className="signup-copy">
+            <span className="section-tag">Pré-cadastro</span>
+            <h2 className="section-title" style={{ textAlign: 'left' }}>
+              Garanta seu <span style={{ color: 'var(--accent)' }}>acesso prioritário</span>
+            </h2>
+            <p className="signup-lead">
+              Cadastre-se agora e seja um dos primeiros a usar a plataforma quando ela for lançada oficialmente.
+            </p>
+            <ul className="signup-perks">
+              <li>✓ Acesso antecipado à plataforma</li>
+              <li>✓ Benefícios exclusivos de lançamento</li>
+              <li>✓ Notificação por e-mail no dia do lançamento</li>
+            </ul>
           </div>
+          {renderSignupForm()}
         </div>
       </section>
 
@@ -499,7 +701,7 @@ export default function LandingPage({ onNavigate }) {
           <div className="footer-col">
             <h4>Navegação</h4>
             <ul>
-              <li onClick={(e) => handleNavClick(e, 'features')}>Funcionalidades</li>
+              <li onClick={scrollToPlatform}>O que oferecemos</li>
               <li onClick={(e) => handleNavClick(e, 'faq')}>Perguntas Frequentes</li>
               <li onClick={(e) => handleNavClick(e, 'pre-registro')}>Pré-Registro</li>
             </ul>
