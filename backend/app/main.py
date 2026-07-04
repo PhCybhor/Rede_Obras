@@ -1,8 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException, status, APIRouter
+from fastapi import FastAPI, Depends, HTTPException, status, APIRouter, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from typing import List, Optional
 import datetime
 
@@ -10,6 +13,7 @@ from .database import engine, get_db, Base
 from . import models, schemas, crud
 from .config import settings
 from .preregistro_service import process_pre_cadastro
+from .rate_limit import limiter, AUTH_LOGIN_LIMIT, AUTH_REGISTER_LIMIT
 
 # Create database tables if they do not exist
 Base.metadata.create_all(bind=engine)
@@ -22,6 +26,25 @@ app = FastAPI(
     redoc_url=None if settings.is_production else "/redoc",
     openapi_url=None if settings.is_production else "/openapi.json",
 )
+
+# Rate limiting global por IP (protege contra brute-force e abuso).
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+
+# Cabeçalhos de segurança em todas as respostas (defesa contra clickjacking, sniffing, etc.).
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response: Response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    if settings.is_production:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 
 # CORS: restringe às origens definidas em ALLOWED_ORIGINS (nunca "*" com credenciais).
 _allowed_origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
@@ -68,14 +91,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 # --- AUTH ENDPOINTS ---
 
 @app.post("/api/auth/register", response_model=schemas.UserResponse)
-def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+@limiter.limit(AUTH_REGISTER_LIMIT)
+def register_user(request: Request, user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="E-mail já cadastrado")
     return crud.create_user(db=db, user=user)
 
 @app.post("/api/auth/token", response_model=schemas.Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit(AUTH_LOGIN_LIMIT)
+def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = crud.get_user_by_email(db, email=form_data.username)
     if not user or not crud.verify_password(form_data.password, user.password_hash):
         raise HTTPException(
@@ -353,4 +378,14 @@ def create_pre_cadastro(pre: schemas.PreCadastroCreate, db: Session = Depends(ge
     return process_pre_cadastro(db, pre, require_lgpd_consent=False)
 
 
-# Email sending removed: pre-cadastro now only stores data in DB.
+# --- FRONTEND ESTÁTICO ---
+# Serve o build de produção do React na raiz (mesma origem da API, sem CORS).
+# Deve ser o ÚLTIMO registro para não sobrepor as rotas /api.
+import os
+from fastapi.staticfiles import StaticFiles
+
+_FRONTEND_DIST = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
+)
+if os.path.isdir(_FRONTEND_DIST):
+    app.mount("/", StaticFiles(directory=_FRONTEND_DIST, html=True), name="frontend")
