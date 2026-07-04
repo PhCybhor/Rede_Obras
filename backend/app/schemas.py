@@ -15,17 +15,18 @@ class TokenData(BaseModel):
 
 # User Schemas
 class UserBase(BaseModel):
-    name: str
+    name: str = Field(..., min_length=2, max_length=120)
     email: EmailStr
-    role: str  # "contratante" or "prestador"
-    specialty: Optional[str] = None
-    hourly_rate: Optional[float] = 0.0
-    bio: Optional[str] = None
-    avatar_color: Optional[str] = "#2563eb"
-    phone: Optional[str] = None
+    role: str = Field(..., pattern="^(contratante|prestador)$")
+    specialty: Optional[str] = Field(None, max_length=50)
+    hourly_rate: Optional[float] = Field(0.0, ge=0)
+    bio: Optional[str] = Field(None, max_length=1000)
+    avatar_color: Optional[str] = Field("#2563eb", max_length=20)
+    phone: Optional[str] = Field(None, max_length=20)
 
 class UserCreate(UserBase):
-    password: str
+    # bcrypt suporta no máximo 72 bytes; limite explícito evita truncamento silencioso.
+    password: str = Field(..., min_length=8, max_length=72)
 
 class UserUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=120)
@@ -39,14 +40,38 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+# Dados completos do próprio usuário (inclui e-mail). Só deve ser retornado ao dono da conta.
 class UserResponse(UserBase):
     id: int
     rating: float
     created_at: datetime
 
     class Config:
-        orm_mode = True
         from_attributes = True
+
+# Perfil público de um prestador/cliente: SEM e-mail e SEM telefone (evita coleta de PII).
+class UserPublicResponse(BaseModel):
+    id: int
+    name: str
+    role: str
+    specialty: Optional[str] = None
+    hourly_rate: Optional[float] = 0.0
+    bio: Optional[str] = None
+    avatar_color: Optional[str] = None
+    rating: float
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Perfil de contato: perfil público + telefone. Usado apenas entre partes já vinculadas
+# (chat ativo e contratos), onde a troca de contato é intencional. Nunca expõe e-mail.
+class UserContactResponse(UserPublicResponse):
+    phone: Optional[str] = None
+
+class AISearchResponse(BaseModel):
+    detected_specialty: str
+    providers: List[UserPublicResponse] = []
 
 # Bid Schemas
 class BidBase(BaseModel):
@@ -63,10 +88,9 @@ class BidResponse(BidBase):
     provider_id: int
     status: str
     created_at: datetime
-    provider: UserResponse
+    provider: UserPublicResponse
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
 # Proposal Schemas
@@ -83,11 +107,10 @@ class ProposalResponse(ProposalBase):
     client_id: int
     status: str
     created_at: datetime
-    client: UserResponse
+    client: UserPublicResponse
     bids: List[BidResponse] = []
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
 # Chat Message Schemas
@@ -102,7 +125,6 @@ class ChatMessageResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
 # Chat Room Schemas
@@ -114,12 +136,11 @@ class ChatRoomResponse(BaseModel):
     client_id: int
     provider_id: int
     created_at: datetime
-    client: UserResponse
-    provider: UserResponse
+    client: UserContactResponse
+    provider: UserContactResponse
     messages: List[ChatMessageResponse] = []
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
 # Material Request Schemas
@@ -136,7 +157,6 @@ class MaterialRequestResponse(MaterialRequestCreate):
     created_at: datetime
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
 # Contract Schemas
@@ -157,12 +177,11 @@ class ContractResponse(BaseModel):
     status: str
     created_at: datetime
     finished_at: Optional[datetime] = None
-    client: UserResponse
-    provider: UserResponse
+    client: UserContactResponse
+    provider: UserContactResponse
     material_requests: List[MaterialRequestResponse] = []
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
 class PreCadastroCreate(BaseModel):
@@ -191,5 +210,4 @@ class PreCadastroResponse(PreCadastroCreate):
     created_at: datetime
 
     class Config:
-        orm_mode = True
         from_attributes = True

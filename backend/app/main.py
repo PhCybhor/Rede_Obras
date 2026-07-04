@@ -14,16 +14,23 @@ from .preregistro_service import process_pre_cadastro
 # Create database tables if they do not exist
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="REDEOBRAS API", version="1.0.0")
+# Documentação (Swagger/OpenAPI) desativada em produção para reduzir superfície de ataque.
+app = FastAPI(
+    title="REDEOBRAS API",
+    version="1.0.0",
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
+    openapi_url=None if settings.is_production else "/openapi.json",
+)
 
-# CORS: em produção restringe às origens definidas em ALLOWED_ORIGINS; em dev libera localhost.
+# CORS: restringe às origens definidas em ALLOWED_ORIGINS (nunca "*" com credenciais).
 _allowed_origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token")
@@ -102,12 +109,20 @@ def update_users_me(
 
 # --- USER & AI MATCHING ENDPOINTS ---
 
-@app.get("/api/providers", response_model=List[schemas.UserResponse])
-def read_providers(query: Optional[str] = None, db: Session = Depends(get_db)):
+@app.get("/api/providers", response_model=List[schemas.UserPublicResponse])
+def read_providers(
+    query: Optional[str] = None,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     return crud.get_providers(db, query=query)
 
-@app.get("/api/providers/ai-search")
-def ai_search_providers(prompt: str, db: Session = Depends(get_db)):
+@app.get("/api/providers/ai-search", response_model=schemas.AISearchResponse)
+def ai_search_providers(
+    prompt: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Simulated AI matching system. Parses natural language string to find relevant service providers.
     """
@@ -153,11 +168,16 @@ def create_proposal(proposal: schemas.ProposalCreate, current_user: models.User 
     return crud.create_proposal(db, proposal=proposal, client_id=current_user.id)
 
 @app.get("/api/proposals", response_model=List[schemas.ProposalResponse])
-def read_proposals(client_id: Optional[int] = None, open_only: bool = False, db: Session = Depends(get_db)):
+def read_proposals(
+    client_id: Optional[int] = None,
+    open_only: bool = False,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     return crud.get_proposals(db, client_id=client_id, open_only=open_only)
 
 @app.get("/api/proposals/{proposal_id}", response_model=schemas.ProposalResponse)
-def read_proposal(proposal_id: int, db: Session = Depends(get_db)):
+def read_proposal(proposal_id: int, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_proposal = crud.get_proposal(db, proposal_id=proposal_id)
     if not db_proposal:
         raise HTTPException(status_code=404, detail="Proposta não encontrada")

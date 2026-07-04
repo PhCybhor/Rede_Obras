@@ -8,14 +8,20 @@ import datetime
 import bcrypt
 
 # Password utility functions
+
+# bcrypt aceita no máximo 72 bytes. Trunca com segurança em limite de byte
+# (evita ValueError e o corte de um caractere multibyte no meio).
+def _bcrypt_safe_bytes(password: str) -> bytes:
+    return password.encode("utf-8")[:72]
+
 def get_password_hash(password: str) -> str:
     salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    hashed = bcrypt.hashpw(_bcrypt_safe_bytes(password), salt)
     return hashed.decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
-        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+        return bcrypt.checkpw(_bcrypt_safe_bytes(plain_password), hashed_password.encode('utf-8'))
     except Exception:
         return False
 
