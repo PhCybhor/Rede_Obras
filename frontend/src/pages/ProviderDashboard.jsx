@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import logo from '../assets/logo.png';
 import { 
-  UserIcon, ChatIcon, BoxIcon, FileIcon, SettingsIcon, StarIcon, SendIcon, LogOutIcon, PlusIcon, CheckIcon, XIcon 
+  SearchIcon, UserIcon, ChatIcon, BoxIcon, FileIcon, SettingsIcon, StarIcon, SendIcon, LogOutIcon, PlusIcon, CheckIcon, XIcon 
 } from '../components/Icons';
 
 export default function ProviderDashboard({ user, onLogout }) {
@@ -153,20 +153,42 @@ export default function ProviderDashboard({ user, onLogout }) {
   };
 
   // Profile save
+  const [savingProfile, setSavingProfile] = useState(false);
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setSavingProfile(true);
     try {
-      // Re-register or profile update endpoint, since it's mock/demo we can simulate locally or through backend if supported.
-      // In backend we register but for simplification we can notify user or run register again. Let's just save.
-      // FastAPI main doesn't have put user endpoint, but we can display success indicating updates.
-      setSuccess('Configurações profissionais salvas com sucesso no banco de dados!');
-      // Refresh profile data
-      const profile = await api.getMe();
-      setProfileData(profile);
+      const updated = await api.updateProfile({
+        name: editName,
+        phone: editPhone,
+        specialty: editSpecialty,
+        hourlyRate: editRate,
+        bio: editBio,
+      });
+      setProfileData(updated);
+      setSuccess('Perfil profissional atualizado com sucesso!');
     } catch (err) {
       setError('Erro ao salvar configurações: ' + err.message);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // Complete contract
+  const handleCompleteContract = async (contractId) => {
+    if (!window.confirm('Deseja marcar este contrato como concluído? Esta ação não pode ser desfeita.')) return;
+    setError('');
+    setSuccess('');
+    try {
+      await api.completeContract(contractId);
+      setSuccess('Contrato marcado como concluído!');
+      const activeContracts = await api.getContracts();
+      setContracts(activeContracts);
+    } catch (err) {
+      setError('Erro ao concluir contrato: ' + err.message);
     }
   };
 
@@ -272,9 +294,8 @@ export default function ProviderDashboard({ user, onLogout }) {
             {activeTab === 'profile' && 'Perfil Profissional'}
           </h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Status da Conexão:</span>
             <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success)' }}></span>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--success)' }}>Pronto (SQLite Mock)</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--success)' }}>Online</span>
           </div>
         </header>
 
@@ -396,12 +417,27 @@ export default function ProviderDashboard({ user, onLogout }) {
                       </p>
 
                       <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                        <button 
-                          onClick={() => handleOpenMaterialForm(c)}
-                          className="btn btn-outline-primary"
-                        >
-                          <PlusIcon size={14} /> Solicitar Materiais de Obra
-                        </button>
+                        {c.status === 'active' && (
+                          <>
+                            <button 
+                              onClick={() => handleOpenMaterialForm(c)}
+                              className="btn btn-outline-primary"
+                            >
+                              <PlusIcon size={14} /> Solicitar Materiais de Obra
+                            </button>
+                            <button 
+                              onClick={() => handleCompleteContract(c.id)}
+                              className="btn btn-primary"
+                            >
+                              <CheckIcon size={14} /> Marcar como Concluído
+                            </button>
+                          </>
+                        )}
+                        {c.status !== 'active' && (
+                          <span style={{ fontSize: '0.9rem', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckIcon size={16} /> Obra concluída
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -604,6 +640,21 @@ export default function ProviderDashboard({ user, onLogout }) {
                   </div>
 
                   <div className="input-group">
+                    <label className="input-label">Especialidade</label>
+                    <select
+                      className="form-control"
+                      value={editSpecialty}
+                      onChange={(e) => setEditSpecialty(e.target.value)}
+                    >
+                      <option value="pedreiro">Pedreiro</option>
+                      <option value="eletricista">Eletricista</option>
+                      <option value="pintor">Pintor</option>
+                      <option value="encanador">Encanador</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+
+                  <div className="input-group">
                     <label className="input-label">Preço Médio por Hora (R$)</label>
                     <input 
                       type="number" 
@@ -623,8 +674,8 @@ export default function ProviderDashboard({ user, onLogout }) {
                     ></textarea>
                   </div>
 
-                  <button type="submit" className="btn btn-accent" style={{ padding: '12px 24px', fontWeight: 700, marginTop: '10px' }}>
-                    Salvar Configurações
+                  <button type="submit" disabled={savingProfile} className="btn btn-accent" style={{ padding: '12px 24px', fontWeight: 700, marginTop: '10px' }}>
+                    {savingProfile ? 'Salvando...' : 'Salvar Configurações'}
                   </button>
                 </div>
               </form>

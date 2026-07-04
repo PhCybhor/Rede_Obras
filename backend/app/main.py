@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import datetime
@@ -8,16 +9,18 @@ import datetime
 from .database import engine, get_db, Base
 from . import models, schemas, crud
 from .config import settings
+from .preregistro_service import process_pre_cadastro
 
 # Create database tables if they do not exist
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="REDEOBRAS API", version="1.0.0")
 
-# Setup CORS for the React frontend
+# CORS: em produção restringe às origens definidas em ALLOWED_ORIGINS; em dev libera localhost.
+_allowed_origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify the React origin
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -88,6 +91,14 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 @app.get("/api/auth/me", response_model=schemas.UserResponse)
 def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+@app.put("/api/users/me", response_model=schemas.UserResponse)
+def update_users_me(
+    data: schemas.UserUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return crud.update_user(db, user=current_user, data=data)
 
 # --- USER & AI MATCHING ENDPOINTS ---
 
@@ -253,6 +264,17 @@ def get_contract(contract_id: int, current_user: models.User = Depends(get_curre
         raise HTTPException(status_code=403, detail="Acesso negado")
     return contract
 
+@app.post("/api/contracts/{contract_id}/complete", response_model=schemas.ContractResponse)
+def complete_contract(contract_id: int, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    contract = crud.get_contract(db, contract_id=contract_id)
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contrato não encontrado")
+    if contract.client_id != current_user.id and contract.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    if contract.status != "active":
+        raise HTTPException(status_code=400, detail="Este contrato não está ativo")
+    return crud.update_contract_status(db, contract_id=contract_id, status="completed")
+
 @app.post("/api/contracts/{contract_id}/materials", response_model=schemas.MaterialRequestResponse)
 def request_materials(contract_id: int, req: schemas.MaterialRequestCreate, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     contract = crud.get_contract(db, contract_id=contract_id)
@@ -306,12 +328,9 @@ def reject_material_request(req_id: int, current_user: models.User = Depends(get
         
     return crud.update_material_request_status(db, req_id=req_id, status="rejected")
 
-@app.post("/api/pre-cadastro", response_model=schemas.PreCadastroResponse)
+@app.post("/api/pre-cadastro", response_model=schemas.PreCadastroPublicResponse)
 def create_pre_cadastro(pre: schemas.PreCadastroCreate, db: Session = Depends(get_db)):
-    if pre.role not in ("contratante", "prestador"):
-        raise HTTPException(status_code=400, detail="role inválido")
-    cadastro = crud.criar_pre_cadastro(db, pre=pre)
-    return cadastro
+    return process_pre_cadastro(db, pre, require_lgpd_consent=False)
 
 
 # Email sending removed: pre-cadastro now only stores data in DB.

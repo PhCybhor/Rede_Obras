@@ -44,6 +44,15 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     return db_user
 
+def update_user(db: Session, user: models.User, data: "schemas.UserUpdate"):
+    """Atualiza os campos de perfil permitidos do usuário logado."""
+    update_fields = data.model_dump(exclude_unset=True)
+    for field, value in update_fields.items():
+        setattr(user, field, value)
+    db.commit()
+    db.refresh(user)
+    return user
+
 def get_providers(db: Session, query: Optional[str] = None):
     db_query = db.query(models.User).filter(models.User.role == "prestador")
     if query:

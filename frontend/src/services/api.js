@@ -145,6 +145,21 @@ class ApiService {
     return this.request('/auth/me');
   }
 
+  async updateProfile(data) {
+    const payload = {};
+    if (data.name !== undefined) payload.name = data.name;
+    if (data.phone !== undefined) payload.phone = data.phone;
+    if (data.specialty !== undefined) payload.specialty = data.specialty;
+    if (data.bio !== undefined) payload.bio = data.bio;
+    if (data.hourlyRate !== undefined && data.hourlyRate !== '') {
+      payload.hourly_rate = parseFloat(data.hourlyRate);
+    }
+    return this.request('/users/me', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
   // --- Providers & AI Search ---
 
   async getProviders(query = '') {
@@ -237,6 +252,12 @@ class ApiService {
 
   async getContract(contractId) {
     return this.request(`/contracts/${contractId}`);
+  }
+
+  async completeContract(contractId) {
+    return this.request(`/contracts/${contractId}/complete`, {
+      method: 'POST',
+    });
   }
 
   async getMaterialRequests() {

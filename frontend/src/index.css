@@ -3013,3 +3013,43 @@ select.form-control {
     margin: 24px auto;
   }
 }
+
+/* Pré-registro: honeypot anti-bot */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Pré-registro: consentimento LGPD */
+.lgpd-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.lgpd-consent input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.lgpd-consent a {
+  color: var(--primary-light);
+  text-decoration: underline;
+}
+
+.lgpd-consent.error {
+  color: var(--danger);
+}
+
+.hero-role-btn {
+  min-width: 180px;
+}

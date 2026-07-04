@@ -1,0 +1,11 @@
+tunnel: redeobras-preregistro
+credentials-file: C:\Users\pedro\.cloudflared\TUNNEL-ID-AQUI.json
+
+ingress:
+  - hostname: redeobras.com
+    service: http://localhost:5174
+  - hostname: www.redeobras.com
+    service: http://localhost:5174
+  - hostname: cadastro.redeobras.com
+    service: http://localhost:5174
+  - service: http_status:404

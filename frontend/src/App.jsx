@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import LandingPage from './pages/LandingPage';
+import LandingOficial from './pages/LandingOficial';
 import AuthPage from './pages/AuthPage';
 import ContractorDashboard from './pages/ContractorDashboard';
 import ProviderDashboard from './pages/ProviderDashboard';
@@ -81,7 +81,7 @@ function App() {
 
   return (
     <>
-      {page === 'landing' && <LandingPage onNavigate={navigate} />}
+      {page === 'landing' && <LandingOficial onNavigate={navigate} />}
       {page === 'login' && <AuthPage onNavigate={navigate} params={params} />}
       {page === 'contratante' && currentUser && (
         <ContractorDashboard user={currentUser} onLogout={handleLogout} />

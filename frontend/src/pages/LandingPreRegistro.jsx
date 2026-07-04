@@ -1,33 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SearchIcon, BoxIcon, FileIcon, ChatIcon, UserIcon, ToolsIcon } from '../components/Icons';
-import { api } from '../services/api';
+import { OFFERINGS, FAQ_PREREGISTRO, OFICIAL_URL } from '../data/landingContent';
+import { preCadastroApi } from '../services/preCadastroApi';
 import logo from '../assets/logo.png';
 
-// Chevron SVG for FAQ
 const ChevronDown = () => (
   <svg className="faq-chevron" viewBox="0 0 20 20" fill="currentColor">
     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
   </svg>
 );
 
-export default function LandingPage({ onNavigate }) {
-  // Toast
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-
-  // Mobile menu
+export default function LandingPreRegistro() {
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // FAQ
   const [openFaq, setOpenFaq] = useState(null);
 
-  // Pre-registration form
   const [form, setForm] = useState({
     name: '',
     email: '',
     phone: '',
     role: 'contratante',
-    interest: ''
+    interest: '',
+    website: '',
+    consentimento_lgpd: false,
   });
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState(null);
@@ -36,84 +29,52 @@ export default function LandingPage({ onNavigate }) {
   const [platformHighlight, setPlatformHighlight] = useState(false);
   const [journeyProgress, setJourneyProgress] = useState(0);
   const [isJourneyScrolling, setIsJourneyScrolling] = useState(false);
+
   const formRef = useRef(null);
   const signupSectionRef = useRef(null);
   const scrollAnimRef = useRef(null);
-
-  // Scroll reveal
   const revealRefs = useRef([]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-          }
+          if (entry.isIntersecting) entry.target.classList.add('visible');
         });
       },
       { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
     );
-
-    revealRefs.current.forEach((el) => {
-      if (el) observer.observe(el);
-    });
-
+    revealRefs.current.forEach((el) => { if (el) observer.observe(el); });
     return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
     const el = signupSectionRef.current;
     if (!el) return;
-
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setSignupVisible(true);
-      },
+      ([entry]) => { if (entry.isIntersecting) setSignupVisible(true); },
       { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
     );
-
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
-  const addRevealRef = (el) => {
-    if (el && !revealRefs.current.includes(el)) {
-      revealRefs.current.push(el);
-    }
-  };
-
-  // Toast handler
-  const handleBlockedClick = (roleName) => {
-    setToastMessage(`${roleName}`);
-    setShowToast(true);
-  };
-
-  useEffect(() => {
-    if (showToast) {
-      const timer = setTimeout(() => setShowToast(false), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [showToast]);
-
-  useEffect(() => {
-    return () => {
-      if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
-      document.body.classList.remove('journey-scrolling');
-    };
+  useEffect(() => () => {
+    if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
+    document.body.classList.remove('journey-scrolling');
   }, []);
 
-  const easeInOutQuart = (t) => (
-    t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2
-  );
+  const addRevealRef = (el) => {
+    if (el && !revealRefs.current.includes(el)) revealRefs.current.push(el);
+  };
+
+  const easeInOutQuart = (t) => (t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2);
 
   const slowScrollTo = (targetY, duration, { onProgress, onComplete } = {}) => {
     if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
-
     const startY = window.scrollY;
     const distance = targetY - startY;
     const startTime = performance.now();
-
     setIsJourneyScrolling(true);
     setJourneyProgress(0);
     document.body.classList.add('journey-scrolling');
@@ -122,11 +83,9 @@ export default function LandingPage({ onNavigate }) {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = easeInOutQuart(progress);
-
       window.scrollTo(0, startY + distance * eased);
       setJourneyProgress(progress);
       onProgress?.(progress);
-
       if (progress < 1) {
         scrollAnimRef.current = requestAnimationFrame(step);
       } else {
@@ -137,87 +96,67 @@ export default function LandingPage({ onNavigate }) {
         onComplete?.();
       }
     };
-
     scrollAnimRef.current = requestAnimationFrame(step);
   };
 
   const getCadastroScrollY = () => {
     const el = signupSectionRef.current || document.getElementById('pre-registro');
     if (!el) return window.scrollY;
-    const rect = el.getBoundingClientRect();
-    return window.scrollY + rect.top - 72;
+    return window.scrollY + el.getBoundingClientRect().top - 72;
   };
 
-  const startJourneyToCadastro = (maxDuration = 7500) => {
+  const startJourneyToCadastro = (maxDuration = 7500, role = null) => {
     setMenuOpen(false);
     if (isJourneyScrolling) return;
-
+    if (role) setForm((prev) => ({ ...prev, role }));
     setSignupVisible(false);
 
     const isMobile = window.innerWidth <= 768;
     const targetY = getCadastroScrollY();
     const distance = Math.abs(targetY - window.scrollY);
-
     const cappedMax = isMobile ? Math.min(maxDuration, 4200) : maxDuration;
     const minDuration = isMobile ? 2600 : 4500;
     const perPixel = isMobile ? 1.4 : 2.8;
     const duration = Math.min(cappedMax, Math.max(minDuration, distance * perPixel));
-
     const platformEl = document.getElementById('plataforma');
 
     slowScrollTo(targetY, duration, {
       onProgress: (progress) => {
-        if (progress > 0.12 && platformEl) {
-          platformEl.classList.add('visible');
-        }
-        if (progress > 0.2 && progress < 0.75) {
-          setPlatformHighlight(true);
-        } else if (progress >= 0.75) {
-          setPlatformHighlight(false);
-        }
-        if (progress > 0.88) {
-          setSignupVisible(true);
-        }
+        if (progress > 0.12 && platformEl) platformEl.classList.add('visible');
+        setPlatformHighlight(progress > 0.2 && progress < 0.75);
+        if (progress > 0.88) setSignupVisible(true);
       },
       onComplete: () => {
         if (platformEl) platformEl.classList.add('visible');
         setSignupVisible(true);
         setPlatformHighlight(false);
-      }
+      },
     });
   };
 
-  // Close mobile menu on anchor click
   const handleNavClick = (e, targetId) => {
     e.preventDefault();
     setMenuOpen(false);
-
     if (targetId === 'pre-registro') {
       startJourneyToCadastro(7000);
       return;
     }
-
-    const el = document.getElementById(targetId);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const scrollToPlatform = () => {
-    startJourneyToCadastro(7500);
-  };
+  const scrollToPlatform = () => startJourneyToCadastro(7500);
+  const scrollToForm = (role = null) => startJourneyToCadastro(6000, role);
 
-  const scrollToForm = () => {
-    startJourneyToCadastro(6000);
-  };
-
-  // Form logic
   const validate = (values) => {
     const e = {};
     if (!values.name || values.name.trim().length < 2) e.name = 'Informe seu nome (mín. 2 caracteres)';
+    if (values.name && values.name.length > 120) e.name = 'Nome muito longo';
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!values.email || !emailRe.test(values.email)) e.email = 'E-mail inválido';
-    if (values.role && !['contratante', 'prestador'].includes(values.role)) e.role = 'Selecione um papel válido';
+    if (values.role && !['contratante', 'prestador'].includes(values.role)) e.role = 'Selecione um perfil válido';
     const phoneRe = /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/;
     if (values.phone && !phoneRe.test(values.phone)) e.phone = 'Telefone inválido (ex: (xx) xxxxx-xxxx)';
+    if (!values.consentimento_lgpd) e.consentimento_lgpd = 'Você precisa aceitar a Política de Privacidade';
     return e;
   };
 
@@ -231,9 +170,14 @@ export default function LandingPage({ onNavigate }) {
   };
 
   const handleChange = (e) => {
-    const value = e.target.name === 'phone' ? formatPhoneValue(e.target.value) : e.target.value;
-    setForm({ ...form, [e.target.name]: value });
-    if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: null });
+    const { name, type, checked, value } = e.target;
+    const nextValue = name === 'phone'
+      ? formatPhoneValue(value)
+      : type === 'checkbox'
+        ? checked
+        : value;
+    setForm({ ...form, [name]: nextValue });
+    if (errors[name]) setErrors({ ...errors, [name]: null });
   };
 
   const handleSubmit = async (e) => {
@@ -247,9 +191,9 @@ export default function LandingPage({ onNavigate }) {
     setIsSubmitting(true);
     setStatus({ type: 'info', message: 'Enviando pré-cadastro...' });
     try {
-      await api.preSignup(form);
-      setStatus({ type: 'success', message: '✅ Pré-cadastro enviado com sucesso! Você garantiu seu lugar na fila.' });
-      setForm({ name: '', email: '', phone: '', role: 'contratante', interest: '' });
+      await preCadastroApi.submit(form);
+      setStatus({ type: 'success', message: 'Pré-cadastro enviado com sucesso! Você garantiu seu lugar na fila.' });
+      setForm({ name: '', email: '', phone: '', role: form.role, interest: '', website: '', consentimento_lgpd: false });
       setErrors({});
     } catch (err) {
       setStatus({ type: 'error', message: err.message || 'Erro ao enviar pré-cadastro' });
@@ -258,74 +202,8 @@ export default function LandingPage({ onNavigate }) {
     }
   };
 
-  // FAQ data
-  const faqs = [
-    {
-      q: 'O que é a REDEOBRAS?',
-      a: 'A REDEOBRAS é uma plataforma digital que conecta contratantes (pessoas que precisam de serviços de construção) com prestadores de serviço qualificados, utilizando inteligência artificial para garantir o melhor match entre profissional e demanda.'
-    },
-    {
-      q: 'Como funciona o Match com IA?',
-      a: 'Você descreve em linguagem natural o que precisa (ex: "preciso consertar um vazamento no banheiro") e nossa inteligência artificial analisa sua demanda, mapeando automaticamente os profissionais mais qualificados e disponíveis na sua região.'
-    },
-    {
-      q: 'O pré-cadastro é gratuito?',
-      a: 'Sim! O pré-cadastro é 100% gratuito e sem compromisso. Ao se cadastrar, você garante acesso prioritário e benefícios exclusivos quando a plataforma for lançada oficialmente.'
-    },
-    {
-      q: 'Quando a plataforma será lançada?',
-      a: 'Estamos em fase final de homologação. O lançamento oficial está previsto para breve. Ao realizar o pré-cadastro, você será notificado por e-mail assim que a plataforma estiver disponível.'
-    },
-    {
-      q: 'Os contratos digitais têm validade jurídica?',
-      a: 'Sim. Todos os contratos gerados pela plataforma seguem as normas da legislação brasileira para contratos digitais, garantindo segurança jurídica para ambas as partes envolvidas.'
-    }
-  ];
-
-  const offerings = [
-    {
-      icon: SearchIcon,
-      title: 'IA de Match Perfeito',
-      desc: 'Descreva em linguagem natural o que precisa e nossa IA mapeia os profissionais ideais na sua região em segundos.',
-      accent: 'rgba(59, 130, 246, 0.4)',
-      iconStyle: { background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: 'var(--primary-light)' }
-    },
-    {
-      icon: BoxIcon,
-      title: 'Gestão de Materiais',
-      desc: 'O prestador solicita insumos pelo painel. O contratante revisa quantidade, valores e aprova ou recusa com um clique.',
-      accent: 'rgba(249, 115, 22, 0.4)',
-      iconStyle: { background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.2)', color: 'var(--accent)' }
-    },
-    {
-      icon: FileIcon,
-      title: 'Contratos Digitais',
-      desc: 'Formalize propostas com segurança jurídica. Publique demandas, receba orçamentos e aceite o melhor para o seu bolso.',
-      accent: 'rgba(16, 185, 129, 0.4)',
-      iconStyle: { background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: 'var(--success)' }
-    },
-    {
-      icon: ChatIcon,
-      title: 'Chat Integrado',
-      desc: 'Negocie diretamente com profissionais dentro da plataforma, com histórico completo de conversas por obra.',
-      accent: 'rgba(139, 92, 246, 0.4)',
-      iconStyle: { background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)', color: '#a78bfa' }
-    },
-    {
-      icon: ToolsIcon,
-      title: 'Propostas Públicas',
-      desc: 'Publique sua demanda e receba múltiplos orçamentos de prestadores qualificados para comparar e escolher.',
-      accent: 'rgba(236, 72, 153, 0.4)',
-      iconStyle: { background: 'rgba(236, 72, 153, 0.1)', border: '1px solid rgba(236, 72, 153, 0.2)', color: '#f472b6' }
-    },
-    {
-      icon: UserIcon,
-      title: 'Painéis Dedicados',
-      desc: 'Áreas exclusivas para contratantes e prestadores, com dashboards completos para gerenciar obras e serviços.',
-      accent: 'rgba(14, 165, 233, 0.4)',
-      iconStyle: { background: 'rgba(14, 165, 233, 0.1)', border: '1px solid rgba(14, 165, 233, 0.2)', color: '#38bdf8' }
-    }
-  ];
+  const faqs = FAQ_PREREGISTRO;
+  const offerings = OFFERINGS;
 
   const renderSignupForm = () => (
     <div className="hero-form-card signup-form-card">
@@ -336,46 +214,28 @@ export default function LandingPage({ onNavigate }) {
       </div>
 
       <form onSubmit={handleSubmit} noValidate>
+        {/* Honeypot anti-bot — oculto para usuários reais */}
+        <div className="hp-field" aria-hidden="true">
+          <label htmlFor="website">Website</label>
+          <input type="text" id="website" name="website" value={form.website} onChange={handleChange} tabIndex={-1} autoComplete="off" />
+        </div>
+
         <div className="form-fields">
           <div className="input-group">
             <span className="input-label">Nome Completo</span>
-            <input
-              className={`form-control ${errors.name ? 'error' : ''}`}
-              type="text"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              placeholder="Ex: Carlos Silva"
-              required
-            />
+            <input className={`form-control ${errors.name ? 'error' : ''}`} type="text" name="name" value={form.name} onChange={handleChange} placeholder="Ex: Carlos Silva" required maxLength={120} />
             {errors.name && <span className="error-text">{errors.name}</span>}
           </div>
 
           <div className="input-group">
             <span className="input-label">Endereço de E-mail</span>
-            <input
-              className={`form-control ${errors.email ? 'error' : ''}`}
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="Ex: carlos@email.com"
-              required
-            />
+            <input className={`form-control ${errors.email ? 'error' : ''}`} type="email" name="email" value={form.email} onChange={handleChange} placeholder="Ex: carlos@email.com" required maxLength={254} />
             {errors.email && <span className="error-text">{errors.email}</span>}
           </div>
 
           <div className="input-group">
             <span className="input-label">Celular / WhatsApp</span>
-            <input
-              className={`form-control ${errors.phone ? 'error' : ''}`}
-              type="text"
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              placeholder="(xx) xxxxx-xxxx"
-              maxLength="15"
-            />
+            <input className={`form-control ${errors.phone ? 'error' : ''}`} type="text" name="phone" value={form.phone} onChange={handleChange} placeholder="(xx) xxxxx-xxxx" maxLength="15" />
             {errors.phone && <span className="error-text">{errors.phone}</span>}
           </div>
 
@@ -383,34 +243,15 @@ export default function LandingPage({ onNavigate }) {
             <span className="input-label">Perfil de Cadastro</span>
             <div className="role-picker" role="radiogroup" aria-label="Perfil de Cadastro">
               <label className={`role-option ${form.role === 'contratante' ? 'active' : ''}`}>
-                <input
-                  type="radio"
-                  name="role"
-                  value="contratante"
-                  checked={form.role === 'contratante'}
-                  onChange={handleChange}
-                />
+                <input type="radio" name="role" value="contratante" checked={form.role === 'contratante'} onChange={handleChange} />
                 <span className="role-option-icon" aria-hidden="true">🏗️</span>
-                <span className="role-option-body">
-                  <strong>Contratante</strong>
-                  <small>Quero realizar obras</small>
-                </span>
+                <span className="role-option-body"><strong>Contratante</strong><small>Quero realizar obras</small></span>
                 <span className="role-option-check" aria-hidden="true">✓</span>
               </label>
-
               <label className={`role-option ${form.role === 'prestador' ? 'active' : ''}`}>
-                <input
-                  type="radio"
-                  name="role"
-                  value="prestador"
-                  checked={form.role === 'prestador'}
-                  onChange={handleChange}
-                />
+                <input type="radio" name="role" value="prestador" checked={form.role === 'prestador'} onChange={handleChange} />
                 <span className="role-option-icon" aria-hidden="true">🔧</span>
-                <span className="role-option-body">
-                  <strong>Prestador</strong>
-                  <small>Quero trabalhar</small>
-                </span>
+                <span className="role-option-body"><strong>Prestador</strong><small>Quero trabalhar</small></span>
                 <span className="role-option-check" aria-hidden="true">✓</span>
               </label>
             </div>
@@ -418,19 +259,18 @@ export default function LandingPage({ onNavigate }) {
           </div>
 
           <div className="input-group">
-            <span className="input-label">
-              O que você mais deseja? <span style={{ color: 'var(--text-light)', fontWeight: 'normal' }}>(Opcional)</span>
-            </span>
-            <textarea
-              className="form-control"
-              name="interest"
-              value={form.interest}
-              onChange={handleChange}
-              rows="3"
-              placeholder="Ex: Encontrar pedreiros qualificados na minha região..."
-              style={{ minHeight: '72px', resize: 'vertical' }}
-            />
+            <span className="input-label">O que você mais deseja? <span style={{ color: 'var(--text-light)', fontWeight: 'normal' }}>(Opcional)</span></span>
+            <textarea className="form-control" name="interest" value={form.interest} onChange={handleChange} rows="3" placeholder="Ex: Encontrar pedreiros qualificados na minha região..." style={{ minHeight: '72px', resize: 'vertical' }} maxLength={500} />
           </div>
+
+          <label className={`lgpd-consent ${errors.consentimento_lgpd ? 'error' : ''}`}>
+            <input type="checkbox" name="consentimento_lgpd" checked={form.consentimento_lgpd} onChange={handleChange} />
+            <span>
+              Li e concordo com a coleta dos meus dados para contato sobre o lançamento, conforme a{' '}
+              <a href="#privacidade" onClick={(e) => e.preventDefault()}>Política de Privacidade</a>.
+            </span>
+          </label>
+          {errors.consentimento_lgpd && <span className="error-text">{errors.consentimento_lgpd}</span>}
 
           <button type="submit" className="btn-cta-shimmer" disabled={isSubmitting}>
             {isSubmitting ? 'Enviando...' : '🚀 Garantir Acesso Prioritário'}
@@ -438,21 +278,7 @@ export default function LandingPage({ onNavigate }) {
         </div>
 
         {status && (
-          <p
-            role="status"
-            aria-live="polite"
-            style={{
-              marginTop: '16px',
-              textAlign: 'center',
-              fontWeight: 600,
-              padding: '12px',
-              borderRadius: 'var(--radius-sm)',
-              background: status.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-              border: status.type === 'success' ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)',
-              fontSize: '0.88rem',
-              color: status.type === 'success' ? 'var(--success)' : 'var(--danger)'
-            }}
-          >
+          <p role="status" aria-live="polite" style={{ marginTop: '16px', textAlign: 'center', fontWeight: 600, padding: '12px', borderRadius: 'var(--radius-sm)', background: status.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : status.type === 'info' ? 'rgba(59, 130, 246, 0.12)' : 'rgba(239, 68, 68, 0.12)', border: status.type === 'success' ? '1px solid rgba(16, 185, 129, 0.25)' : status.type === 'info' ? '1px solid rgba(59, 130, 246, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)', fontSize: '0.88rem', color: status.type === 'success' ? 'var(--success)' : status.type === 'info' ? 'var(--primary-light)' : 'var(--danger)' }}>
             {status.message}
           </p>
         )}
@@ -461,85 +287,47 @@ export default function LandingPage({ onNavigate }) {
   );
 
   return (
-    <div className="landing-page animate-fade-in">
+    <div className="landing-page animate-fade-in landing-preregistro">
       {isJourneyScrolling && (
         <div className="journey-progress-bar" aria-hidden="true">
           <div className="journey-progress-fill" style={{ width: `${journeyProgress * 100}%` }} />
         </div>
       )}
 
-      {/* Toast */}
-      {showToast && (
-        <div className="toast-container">
-          <div className="toast">
-            <span style={{ fontSize: '1.2rem' }}>🔒</span>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ color: 'var(--accent)', fontSize: '0.78rem', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Acesso Restrito</span>
-              <span>{toastMessage} <strong style={{ color: 'var(--accent)' }}>(em breve)</strong></span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== NAVBAR ===== */}
       <nav className="landing-navbar glass-navbar">
         <div className="nav-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <img src={logo} alt="REDEOBRAS" />
         </div>
-
         <ul className="nav-links">
-          <li>
-            <button className="btn btn-explore-top" onClick={scrollToPlatform}>
-              O que oferecemos
-            </button>
-          </li>
+          <li><button className="btn btn-explore-top" onClick={scrollToPlatform}>O que oferecemos</button></li>
           <li><a onClick={(e) => handleNavClick(e, 'faq')}>Perguntas</a></li>
           <li><a onClick={(e) => handleNavClick(e, 'pre-registro')}>Pré-Registro</a></li>
         </ul>
-
         <div className="nav-right">
-          <button
-            onClick={() => onNavigate('login', { initialTab: 'login' })}
-            className="btn btn-outline-primary nav-login-desktop"
-          >
-            Entrar no Sistema
+          <button className="btn btn-outline-primary nav-login-desktop" onClick={() => scrollToForm()}>
+            Fazer Pré-cadastro
           </button>
           <button className={`hamburger ${menuOpen ? 'active' : ''}`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
-            <span></span>
-            <span></span>
-            <span></span>
+            <span /><span /><span />
           </button>
         </div>
       </nav>
 
-      {/* Mobile Menu */}
       <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
-        <button className="btn btn-explore-top" onClick={scrollToPlatform}>
-          O que oferecemos
-        </button>
+        <button className="btn btn-explore-top" onClick={scrollToPlatform}>O que oferecemos</button>
         <a onClick={(e) => handleNavClick(e, 'faq')}>Perguntas Frequentes</a>
         <a onClick={(e) => handleNavClick(e, 'pre-registro')}>Pré-Registro</a>
-        <button
-          onClick={() => { setMenuOpen(false); onNavigate('login', { initialTab: 'login' }); }}
-          className="btn btn-outline-primary"
-          style={{ marginTop: '12px' }}
-        >
-          Entrar no Sistema
+        <button className="btn btn-outline-primary" style={{ marginTop: '12px' }} onClick={() => scrollToForm()}>
+          Fazer Pré-cadastro
         </button>
       </div>
 
-      {/* ===== HERO ===== */}
       <header className="landing-hero">
         <div className="hero-centered">
           <span className="hero-tag">🚀 Plataforma em Pré-Lançamento</span>
-
           <h1 className="hero-title">
-            Conectando quem{' '}
-            <span className="highlight-primary">constrói</span>{' '}
-            com quem precisa de{' '}
-            <span className="highlight-accent">obras</span>.
+            Conectando quem <span className="highlight-primary">constrói</span> com quem precisa de <span className="highlight-accent">obras</span>.
           </h1>
-
           <p className="hero-subtitle">
             Encontre profissionais com IA, gerencie materiais e formalize contratos digitais seguros — tudo em um único lugar.
           </p>
@@ -571,40 +359,30 @@ export default function LandingPage({ onNavigate }) {
             </button>
             <button
               className="btn btn-outline-primary hero-secondary-btn"
-              onClick={scrollToForm}
+              onClick={() => scrollToForm()}
               disabled={isJourneyScrolling}
             >
               Ir direto ao cadastro
             </button>
           </div>
 
-          <div className="locked-section">
-            <span className="locked-label">Acesso ao sistema (em homologação)</span>
-            <div className="locked-buttons">
-              <button onClick={() => handleBlockedClick('Sou Contratante')} className="btn btn-blocked">
-                <span>🔒</span> Sou Contratante
-              </button>
-              <button onClick={() => handleBlockedClick('Quero Trabalhar')} className="btn btn-blocked">
-                <span>🔒</span> Quero Trabalhar
-              </button>
-            </div>
+          <div className="hero-cta-group" style={{ marginTop: '12px' }}>
+            <button className="btn btn-primary hero-role-btn" onClick={() => scrollToForm('contratante')} disabled={isJourneyScrolling}>
+              Sou Contratante
+            </button>
+            <button className="btn btn-outline-primary hero-role-btn" onClick={() => scrollToForm('prestador')} disabled={isJourneyScrolling}>
+              Quero Trabalhar
+            </button>
           </div>
 
           <button className="scroll-hint" onClick={scrollToPlatform} aria-label="Rolar para ver funcionalidades">
             <span>Explore a plataforma</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 5v14M5 12l7 7 7-7" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
           </button>
         </div>
       </header>
 
-      {/* ===== PLATFORM SHOWCASE ===== */}
-      <section
-        id="plataforma"
-        className={`platform-showcase reveal-section ${platformHighlight ? 'platform-highlight' : ''}`}
-        ref={addRevealRef}
-      >
+      <section id="plataforma" className={`platform-showcase reveal-section ${platformHighlight ? 'platform-highlight' : ''}`} ref={addRevealRef}>
         <div className="stats-grid platform-stats">
           <div className="stat-card">
             <div className="stat-number primary">500+</div>
@@ -629,45 +407,28 @@ export default function LandingPage({ onNavigate }) {
             Tecnologia de ponta aplicada à construção civil. Uma plataforma completa para conectar, contratar e gerenciar obras com segurança.
           </p>
         </div>
-
         <div className="offerings-grid">
           {offerings.map((item, i) => {
             const Icon = item.icon;
             return (
-              <div
-                key={item.title}
-                className="offering-card feature-card"
-                style={{ '--card-accent': item.accent, '--stagger': i }}
-              >
-                <div className="feature-icon" style={item.iconStyle}>
-                  <Icon size={30} />
-                </div>
+              <div key={item.title} className="offering-card feature-card" style={{ '--card-accent': item.accent, '--stagger': i }}>
+                <div className="feature-icon" style={item.iconStyle}><Icon size={30} /></div>
                 <h3>{item.title}</h3>
                 <p>{item.desc}</p>
               </div>
             );
           })}
         </div>
-
         <div className="platform-connector">
-          <div className="connector-line" />
-          <span className="connector-label">Pronto para garantir seu lugar?</span>
-          <div className="connector-line" />
+          <div className="connector-line" /><span className="connector-label">Pronto para garantir seu lugar?</span><div className="connector-line" />
         </div>
       </section>
 
-      {/* ===== SIGNUP (animated on scroll) ===== */}
-      <section
-        id="pre-registro"
-        ref={signupSectionRef}
-        className={`signup-section ${signupVisible ? 'signup-visible' : ''}`}
-      >
+      <section id="pre-registro" ref={signupSectionRef} className={`signup-section ${signupVisible ? 'signup-visible' : ''}`}>
         <div className="signup-section-inner" ref={formRef}>
           <div className="signup-copy">
             <span className="section-tag">Pré-cadastro</span>
-            <h2 className="section-title" style={{ textAlign: 'left' }}>
-              Garanta seu <span style={{ color: 'var(--accent)' }}>acesso prioritário</span>
-            </h2>
+            <h2 className="section-title" style={{ textAlign: 'left' }}>Garanta seu <span style={{ color: 'var(--accent)' }}>acesso prioritário</span></h2>
             <p className="signup-lead">
               Cadastre-se agora e seja um dos primeiros a usar a plataforma quando ela for lançada oficialmente.
             </p>
@@ -681,7 +442,6 @@ export default function LandingPage({ onNavigate }) {
         </div>
       </section>
 
-      {/* ===== FAQ ===== */}
       <section className="faq-section reveal-section" ref={addRevealRef} id="faq">
         <div className="section-header">
           <span className="section-tag">Perguntas Frequentes</span>
@@ -690,39 +450,27 @@ export default function LandingPage({ onNavigate }) {
             As respostas para as perguntas mais comuns sobre a REDEOBRAS.
           </p>
         </div>
-
         <div className="faq-list">
           {faqs.map((faq, i) => (
             <div key={i} className={`faq-item ${openFaq === i ? 'active' : ''}`}>
               <button className="faq-question" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
-                <span>{faq.q}</span>
-                <ChevronDown />
+                <span>{faq.q}</span><ChevronDown />
               </button>
-              <div className="faq-answer">
-                <p>{faq.a}</p>
-              </div>
+              <div className="faq-answer"><p>{faq.a}</p></div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ===== CTA FINAL ===== */}
       <section className="cta-section reveal-section" ref={addRevealRef}>
         <div className="cta-content">
-          <h2>
-            Não fique de fora da <span style={{ color: 'var(--accent)' }}>revolução</span> da construção civil
-          </h2>
-          <p>
-            Garanta seu acesso prioritário agora e seja um dos primeiros a usar a plataforma mais inovadora do setor.
-          </p>
-          <button className="btn-cta-shimmer" onClick={scrollToForm}>
-            ↑ Quero Garantir Meu Acesso
-          </button>
+          <h2>Não fique de fora da <span style={{ color: 'var(--accent)' }}>revolução</span> da construção civil</h2>
+          <p>Garanta seu acesso prioritário agora e seja um dos primeiros a usar a plataforma mais inovadora do setor.</p>
+          <button className="btn-cta-shimmer" onClick={() => scrollToForm()}>↑ Quero Garantir Meu Acesso</button>
         </div>
       </section>
 
-      {/* ===== FOOTER ===== */}
-      <footer className="landing-footer">
+      <footer className="landing-footer" id="privacidade">
         <div className="footer-grid">
           <div className="footer-brand">
             <img src={logo} alt="REDEOBRAS" style={{ height: '42px', width: 'auto', objectFit: 'contain' }} />
@@ -731,7 +479,6 @@ export default function LandingPage({ onNavigate }) {
               Conecte. Contrate. Construa.
             </p>
           </div>
-
           <div className="footer-col">
             <h4>Navegação</h4>
             <ul>
@@ -740,19 +487,24 @@ export default function LandingPage({ onNavigate }) {
               <li onClick={(e) => handleNavClick(e, 'pre-registro')}>Pré-Registro</li>
             </ul>
           </div>
-
           <div className="footer-col">
             <h4>Contato</h4>
             <ul>
-              <li>📧 contato@redeobras.com.br</li>
-              <li>📍 Brasil</li>
-              <li>🕐 Em breve: suporte 24h</li>
+              <li>contato@redeobras.com.br</li>
+              <li>Brasil</li>
             </ul>
           </div>
+          {OFICIAL_URL && (
+            <div className="footer-col">
+              <h4>Plataforma</h4>
+              <ul>
+                <li><a href={OFICIAL_URL} target="_blank" rel="noopener noreferrer">Site oficial</a></li>
+              </ul>
+            </div>
+          )}
         </div>
-
         <div className="footer-bottom">
-          <p>© 2026 REDEOBRAS. Todos os direitos reservados. Plataforma inovadora de conectividade na construção civil.</p>
+          <p>© 2026 REDEOBRAS. Todos os direitos reservados. Seus dados são tratados conforme a LGPD.</p>
         </div>
       </footer>
     </div>

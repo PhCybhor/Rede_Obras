@@ -10,6 +10,10 @@ class Settings:
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
     PORT: int = int(os.getenv("PORT", "8000"))
+    ENV: str = os.getenv("ENV", "development")
+    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+    PREREGISTRO_RATE_LIMIT: int = int(os.getenv("PREREGISTRO_RATE_LIMIT", "5"))
+    PREREGISTRO_RATE_WINDOW: int = int(os.getenv("PREREGISTRO_RATE_WINDOW", "3600"))
 
     SMTP_HOST: str = os.getenv("SMTP_HOST", "")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))

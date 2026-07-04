@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import List, Optional
 from datetime import datetime
 
@@ -26,6 +26,14 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=2, max_length=120)
+    phone: Optional[str] = Field(None, max_length=20)
+    specialty: Optional[str] = Field(None, max_length=50)
+    hourly_rate: Optional[float] = Field(None, ge=0)
+    bio: Optional[str] = Field(None, max_length=1000)
+    avatar_color: Optional[str] = Field(None, max_length=20)
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -158,12 +166,25 @@ class ContractResponse(BaseModel):
         from_attributes = True
 
 class PreCadastroCreate(BaseModel):
-    nome: str
+    nome: str = Field(..., min_length=2, max_length=120)
     email: EmailStr
-    telefone: Optional[str] = None
-    cargo: Optional[str] = None
-    interesse: Optional[str] = None
-    role: str  # "contratante" ou "prestador"
+    telefone: Optional[str] = Field(None, max_length=20)
+    cargo: Optional[str] = Field(None, max_length=50)
+    interesse: Optional[str] = Field(None, max_length=500)
+    role: str = Field(..., pattern="^(contratante|prestador)$")
+    website: Optional[str] = Field(None, max_length=200)
+    consentimento_lgpd: bool = False
+
+    @field_validator("nome", "telefone", "cargo", "interesse", mode="before")
+    @classmethod
+    def strip_strings(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+class PreCadastroPublicResponse(BaseModel):
+    message: str
+    ok: bool = True
 
 class PreCadastroResponse(PreCadastroCreate):
     id: int

@@ -2,6 +2,7 @@
 node_modules/
 frontend/node_modules/
 frontend/dist/
+frontend/dist-preregistro/
 frontend/build/
 .eslintcache
 
@@ -19,6 +20,9 @@ venv/
 # Environment configurations containing credentials
 .env
 backend/.env
+backend/.env.preregistro
+frontend/.env
+frontend/.env.preregistro
 
 # Local Databases
 backend/redeobras.db

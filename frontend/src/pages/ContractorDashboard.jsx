@@ -35,6 +35,9 @@ export default function ContractorDashboard({ user, onLogout }) {
 
   // Profile state
   const [profileData, setProfileData] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
 
   // Notifications/Errors
   const [error, setError] = useState('');
@@ -85,8 +88,27 @@ export default function ContractorDashboard({ user, onLogout }) {
       // Load profile info
       const profile = await api.getMe();
       setProfileData(profile);
+      setEditName(profile.name);
+      setEditPhone(profile.phone || '');
     } catch (err) {
       setError('Erro ao carregar dados do painel: ' + err.message);
+    }
+  };
+
+  // Save contractor profile
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setSavingProfile(true);
+    try {
+      const updated = await api.updateProfile({ name: editName, phone: editPhone });
+      setProfileData(updated);
+      setSuccess('Perfil atualizado com sucesso!');
+    } catch (err) {
+      setError('Erro ao salvar perfil: ' + err.message);
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -174,6 +196,22 @@ export default function ContractorDashboard({ user, onLogout }) {
       }
     } catch (err) {
       setError('Erro ao rejeitar orçamento: ' + err.message);
+    }
+  };
+
+  // Complete contract
+  const handleCompleteContract = async (contractId) => {
+    if (!window.confirm('Deseja marcar este contrato como concluído? Esta ação não pode ser desfeita.')) return;
+    setError('');
+    setSuccess('');
+    try {
+      const updated = await api.completeContract(contractId);
+      setSuccess('Contrato marcado como concluído!');
+      const activeContracts = await api.getContracts();
+      setContracts(activeContracts);
+      setSelectedContract(updated);
+    } catch (err) {
+      setError('Erro ao concluir contrato: ' + err.message);
     }
   };
 
@@ -318,9 +356,8 @@ export default function ContractorDashboard({ user, onLogout }) {
             {activeTab === 'profile' && 'Minhas Configurações'}
           </h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Status da Conexão:</span>
             <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success)' }}></span>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--success)' }}>Pronto (SQLite Mock)</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--success)' }}>Online</span>
           </div>
         </header>
 
@@ -540,6 +577,15 @@ export default function ContractorDashboard({ user, onLogout }) {
                         <h4 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--primary)' }}>
                           R$ {selectedContract.budget.toFixed(2)}
                         </h4>
+                        {selectedContract.status === 'active' && (
+                          <button
+                            onClick={() => handleCompleteContract(selectedContract.id)}
+                            className="btn btn-primary"
+                            style={{ marginTop: '12px', padding: '8px 16px', fontSize: '0.85rem' }}
+                          >
+                            <CheckIcon size={14} /> Concluir Contrato
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -613,8 +659,8 @@ export default function ContractorDashboard({ user, onLogout }) {
                             <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary)' }}>
                               R$ {c.budget.toFixed(2)}
                             </span>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', marginTop: '4px' }}>
-                              Ver Detalhes →
+                            <span style={{ fontSize: '0.8rem', color: c.status === 'active' ? 'var(--text-light)' : 'var(--success)', marginTop: '4px', fontWeight: c.status === 'active' ? 400 : 600 }}>
+                              {c.status === 'active' ? 'Ver Detalhes →' : 'Concluído ✓'}
                             </span>
                           </div>
                         </div>
@@ -880,30 +926,55 @@ export default function ContractorDashboard({ user, onLogout }) {
           {/* TAB 6: CONFIGURAÇÕES PROFILE */}
           {activeTab === 'profile' && profileData && (
             <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
-              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                <div className="user-avatar" style={{ backgroundColor: '#ef4444', width: '80px', height: '80px', fontSize: '2.2rem', margin: '0 auto 16px' }}>
-                  {profileData.name.charAt(0).toUpperCase()}
+              <form onSubmit={handleSaveProfile}>
+                <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                  <div className="user-avatar" style={{ backgroundColor: '#ef4444', width: '80px', height: '80px', fontSize: '2.2rem', margin: '0 auto 16px' }}>
+                    {(editName || profileData.name).charAt(0).toUpperCase()}
+                  </div>
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{editName}</h3>
+                  <span className="provider-badge" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', marginTop: '6px' }}>Contratante</span>
                 </div>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{profileData.name}</h3>
-                <span className="provider-badge" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', marginTop: '6px' }}>Contratante</span>
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
-                <div>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>E-mail de Cadastro</span>
-                  <p style={{ fontWeight: 600, fontSize: '1rem', marginTop: '2px' }}>{profileData.email}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
+                  <div className="input-group">
+                    <label className="input-label">Nome Completo</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="input-group">
+                    <label className="input-label">E-mail de Cadastro (Inalterável)</label>
+                    <input type="email" className="form-control" value={profileData.email} disabled />
+                  </div>
+
+                  <div className="input-group">
+                    <label className="input-label">Telefone / WhatsApp</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      placeholder="(xx) xxxxx-xxxx"
+                    />
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Data de Filiação</span>
+                    <p style={{ fontWeight: 600, fontSize: '1rem', marginTop: '2px' }}>
+                      {new Date(profileData.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  <button type="submit" disabled={savingProfile} className="btn btn-primary" style={{ padding: '12px 24px', fontWeight: 700, marginTop: '10px' }}>
+                    {savingProfile ? 'Salvando...' : 'Salvar Perfil'}
+                  </button>
                 </div>
-                <div>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Telefone / WhatsApp</span>
-                  <p style={{ fontWeight: 600, fontSize: '1rem', marginTop: '2px' }}>{profileData.phone || 'Não cadastrado'}</p>
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Data de Filiação</span>
-                  <p style={{ fontWeight: 600, fontSize: '1rem', marginTop: '2px' }}>
-                    {new Date(profileData.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
+              </form>
             </div>
           )}
 

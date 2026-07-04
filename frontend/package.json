@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:preregistro": "vite --config vite.config.preregistro.js",
     "build": "vite build",
+    "build:preregistro": "vite build --config vite.config.preregistro.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:preregistro": "vite preview --config vite.config.preregistro.js"
   },
   "dependencies": {
     
